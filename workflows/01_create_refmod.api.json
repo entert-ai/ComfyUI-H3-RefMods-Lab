@@ -1,0 +1,61 @@
+{
+  "1": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "CHOOSE_REFERENCE_IMAGE.png"
+    }
+  },
+  "2": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "minimax_h3_video_vae_fp16.safetensors"
+    }
+  },
+  "3": {
+    "class_type": "H3RefModLabCreate",
+    "inputs": {
+      "vae": [
+        "2",
+        0
+      ],
+      "images": [
+        "1",
+        0
+      ],
+      "name": "subject",
+      "description": "Describe what this reference shows.",
+      "vae_label": "minimax_h3_video_vae_fp16.safetensors",
+      "max_edge": 768,
+      "max_tokens": 8192
+    }
+  },
+  "4": {
+    "class_type": "H3RefModLabSave",
+    "inputs": {
+      "refmod": [
+        "3",
+        0
+      ],
+      "filename": "subject",
+      "embed_workflow": true
+    }
+  },
+  "5": {
+    "class_type": "H3RefModLabInspect",
+    "inputs": {
+      "refmod": [
+        "3",
+        0
+      ]
+    }
+  },
+  "6": {
+    "class_type": "PreviewImage",
+    "inputs": {
+      "images": [
+        "5",
+        0
+      ]
+    }
+  }
+}

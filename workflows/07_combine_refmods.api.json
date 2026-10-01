@@ -1,0 +1,69 @@
+{
+  "1": {
+    "class_type": "H3RefModLabLoad",
+    "inputs": {
+      "filename": "CHOOSE_REFMOD_1.safetensors"
+    }
+  },
+  "2": {
+    "class_type": "H3RefModLabLoad",
+    "inputs": {
+      "filename": "CHOOSE_REFMOD_2.safetensors"
+    }
+  },
+  "3": {
+    "class_type": "H3RefModLabLoad",
+    "inputs": {
+      "filename": "CHOOSE_REFMOD_3.safetensors"
+    }
+  },
+  "4": {
+    "class_type": "H3RefModLabLoad",
+    "inputs": {
+      "filename": "CHOOSE_REFMOD_4.safetensors"
+    }
+  },
+  "5": {
+    "class_type": "H3RefModLabCombine",
+    "inputs": {
+      "refmod_a": [
+        "1",
+        0
+      ],
+      "refmod_b": [
+        "2",
+        0
+      ],
+      "strength_a": 1.0,
+      "strength_b": 1.0,
+      "refmods.refmod_0": [
+        "3",
+        0
+      ],
+      "refmods.refmod_1": [
+        "4",
+        0
+      ],
+      "extra_strengths": "{}"
+    }
+  },
+  "6": {
+    "class_type": "H3RefModLabSelectSources",
+    "inputs": {
+      "refmod": [
+        "5",
+        0
+      ],
+      "selection": "all"
+    }
+  },
+  "7": {
+    "class_type": "H3RefModLabInspect",
+    "inputs": {
+      "refmod": [
+        "6",
+        0
+      ]
+    }
+  }
+}
