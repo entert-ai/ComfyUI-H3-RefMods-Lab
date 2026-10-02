@@ -226,12 +226,10 @@
       "widgets_values": [
         "Alice",
         "Describe the appearance, motion and voice this reference should supply.",
-        "minimax_h3_video_vae_fp16.safetensors",
         0.0,
         3.0,
         512,
         8192,
-        "minimax_h3_audio_vae_fp32.safetensors",
         "partially_preserved",
         "Keep identity; allow changes to clothing and background.",
         "reference",

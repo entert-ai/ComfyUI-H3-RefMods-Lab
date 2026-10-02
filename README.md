@@ -21,7 +21,7 @@ are companion API graphs, not canvas workflows. Choose your own reference files;
 placeholder filenames deliberately contain no personal content.
 
 1. **01_create_refmod.json** — choose an image, name and description. Select the
-   H3 visual VAE and set `vae_label` to the same filename. Queue to encode, inspect
+   H3 visual VAE. Queue to encode, inspect
    and save. Saves go to `ComfyUI/models/h3_refmods_lab`, with numbered filenames
    that never overwrite existing packs. Source images are embedded in the pack.
    **Embed workflow** is on by default: drag a newly saved `.safetensors` onto
@@ -118,6 +118,8 @@ branches for different descriptions. Source labels such as Alice1 and Alice2 are
 assigned automatically in pack order. They are display labels, not filenames or
 reference tokens, and may renumber after selection/reordering. Internal selection
 IDs remain unchanged. Save's filename field still controls the output filename.
+Create nodes do not ask for VAE labels: the connected VAE determines encoding.
+Existing VAE labels in saved packs remain readable.
 Older saved packs remain readable; subject metadata is grouped by name even if
 it contains former grouping keys. Old canvas node fields migrate when loaded. API callers should use `subject_name`;
 the former `name` and `subject_key` inputs have been removed.

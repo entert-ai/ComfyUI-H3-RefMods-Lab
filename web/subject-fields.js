@@ -21,6 +21,14 @@ export function migrateSubjectFields(graph) {
                 values.splice(2, 1);
             }
         }
+        const oldLengths = { H3RefModLabCreate: [5, 7], H3RefModLabCreateVideo: [8, 12], H3RefModLabCreateAudio: [6, 8] };
+        if (oldLengths[node.type]?.includes(values.length)) {
+            if ((node.inputs || []).some((input) => input.link != null && ["vae_label", "audio_vae_label"].includes(input.name))) {
+                throw new Error("Replace this older H3 Create node: its former VAE label is a linked input.");
+            }
+            if (node.type === "H3RefModLabCreateVideo") values.splice(7, 1);
+            values.splice(2, 1);
+        }
     }
     for (const subgraph of graph.definitions?.subgraphs || []) migrateSubjectFields(subgraph);
 }

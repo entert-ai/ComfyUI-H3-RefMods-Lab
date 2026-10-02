@@ -121,7 +121,6 @@
       "widgets_values": [
         "Alice",
         "Describe what this reference shows.",
-        "minimax_h3_video_vae_fp16.safetensors",
         768,
         8192,
         "partially_preserved",

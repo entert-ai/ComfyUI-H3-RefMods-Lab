@@ -23,7 +23,6 @@
         0
       ],
       "description": "Describe what this reference shows.",
-      "vae_label": "minimax_h3_video_vae_fp16.safetensors",
       "max_edge": 768,
       "max_tokens": 8192,
       "subject_name": "Alice",

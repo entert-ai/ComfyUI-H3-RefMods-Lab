@@ -53,9 +53,9 @@ audio_vae = comfy_nodes.VAELoader().load_vae(audio_name)[0]
 frames = torch.linspace(0, 1, 22 * 64 * 96 * 3).reshape(22, 64, 96, 3)
 signal = 0.1 * torch.sin(torch.arange(64000).float() * (2 * torch.pi * 440 / 32000))
 audio = {"waveform": signal[None, None].repeat(1, 2, 1), "sample_rate": 32000}
-created = nodes.CreateVideo.execute(visual, frames, 24, "synthetic_motion", "", visual_name,
-    0, 22 / 24, 96, 8192, audio=audio, audio_vae=audio_vae, audio_vae_label=audio_name).result[0]
-standalone = nodes.CreateAudio.execute(audio_vae, audio, "synthetic_sound", "", audio_name, 0, 2, 8192).result[0]
+created = nodes.CreateVideo.execute(visual, frames, 24, "synthetic_motion", "",
+    0, 22 / 24, 96, 8192, audio=audio, audio_vae=audio_vae).result[0]
+standalone = nodes.CreateAudio.execute(audio_vae, audio, "synthetic_sound", "", 0, 2, 8192).result[0]
 prepared = nodes.prepare_audio(audio, 0, 22 / 24, require_full=True)
 clip = Clip()
 with torch.inference_mode():

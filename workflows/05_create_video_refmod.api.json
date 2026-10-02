@@ -42,7 +42,6 @@
         2
       ],
       "description": "Describe the appearance, motion and voice this reference should supply.",
-      "vae_label": "minimax_h3_video_vae_fp16.safetensors",
       "start_seconds": 0.0,
       "duration_seconds": 3.0,
       "max_edge": 512,
@@ -55,7 +54,6 @@
         "4",
         0
       ],
-      "audio_vae_label": "minimax_h3_audio_vae_fp32.safetensors",
       "subject_name": "Alice",
       "retention_strategy": "partially_preserved",
       "retention_details": "Keep identity; allow changes to clothing and background.",

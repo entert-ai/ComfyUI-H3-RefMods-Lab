@@ -146,6 +146,8 @@ class RefModTests(unittest.TestCase):
             self.assertIn("subject_name", names)
             self.assertNotIn("name", names)
             self.assertNotIn("subject_key", names)
+            self.assertNotIn("vae_label", names)
+            self.assertNotIn("audio_vae_label", names)
         with self.assertRaisesRegex(ValueError, "Subject name"):
             core.instruction_metadata("  ")
         # Old saved IDs remain readable but names now control grouping.
@@ -290,7 +292,7 @@ class RefModTests(unittest.TestCase):
         vae, audio_vae = Visual(), Audio()
         frames = torch.arange(90).float().view(-1, 1, 1, 1).expand(-1, 64, 96, 3) / 100
         audio = {"waveform": torch.zeros(1, 1, 96000), "sample_rate": 32000}
-        kwargs = dict(vae=vae, frames=frames, source_fps=30, subject_name="clip", description="", vae_label="test",
+        kwargs = dict(vae=vae, frames=frames, source_fps=30, subject_name="clip", description="",
             start_seconds=0.5, duration_seconds=1, max_edge=768, max_tokens=8192, audio=audio, audio_vae=audio_vae)
         created = nodes.CreateVideo.execute(**kwargs).result[0]
         entry = created["entries"][0]
@@ -313,12 +315,12 @@ class RefModTests(unittest.TestCase):
             def encode(self, waveform):
                 return torch.ones(1, 32, 2, round(waveform.shape[1] / 800))
         source = {"waveform": torch.ones(1, 1, 64000) * 0.1, "sample_rate": 32000}
-        result = nodes.CreateAudio.execute(Audio(), source, "voice", "", "test", 0.5, 1, 8192).result[0]
+        result = nodes.CreateAudio.execute(Audio(), source, "voice", "", 0.5, 1, 8192).result[0]
         self.assertEqual(core.token_count(result["entries"]), 80)
         self.assertEqual(result["entries"][0]["duration_seconds"], 1)
         self.assertEqual(core.text_items(result["entries"]), [{"type": "audio"}])
         with self.assertRaisesRegex(ValueError, "empty"):
-            nodes.CreateAudio.execute(Audio(), source, "voice", "", "test", 3, 1, 8192)
+            nodes.CreateAudio.execute(Audio(), source, "voice", "", 3, 1, 8192)
 
     def test_cached_comfy_ui_preserves_source_ids(self):
         from comfy_execution.asset_enrichment import register_cached_outputs
@@ -590,10 +592,11 @@ class RefModTests(unittest.TestCase):
         vae = VAE()
         images = torch.full((2, 64, 96, 3), 0.5)
         with self.assertRaisesRegex(ValueError, "budget"):
-            nodes.Create.execute(vae, images, "alice", "", "test", 768, 11)
+            nodes.Create.execute(vae, images, "alice", "", 768, 11)
         self.assertEqual(vae.calls, 0)
-        result = nodes.Create.execute(vae, images, "alice", "", "test", 768, 12).result[0]
+        result = nodes.Create.execute(vae, images, "alice", "", 768, 12).result[0]
         self.assertEqual(vae.calls, 2)
+        self.assertNotIn("vae_label", result["entries"][0])
         self.assertEqual(len(result["entries"]), 2)
         self.assertEqual(result["entries"][0]["subject_id"], result["entries"][1]["subject_id"])
 

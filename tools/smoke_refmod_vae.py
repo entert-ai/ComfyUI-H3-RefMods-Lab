@@ -40,7 +40,7 @@ started = time.monotonic()
 vae_name = "minimax_h3_video_vae_fp16.safetensors"
 vae = comfy_nodes.VAELoader().load_vae(vae_name)[0]
 image = torch.linspace(0, 1, 448 * 768 * 3).reshape(1, 448, 768, 3)
-created = nodes.Create.execute(vae, image, "synthetic_test", "Synthetic gradient for VAE verification", vae_name, 768, 8192).result[0]
+created = nodes.Create.execute(vae, image, "synthetic_test", "Synthetic gradient for VAE verification", 768, 8192).result[0]
 with torch.inference_mode():
     native = MiniMaxH3ReferenceToVideo.execute(Clip(), "test", 768, 448, 5, "match", vae=vae, ref_images={"ref_image_1": image}).result[0][0][1]["minimax_refs"][0]["latent"]
 actual = created["entries"][0]["latent"]
