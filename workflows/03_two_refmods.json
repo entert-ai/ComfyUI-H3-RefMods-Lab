@@ -168,7 +168,7 @@
     },
     {
       "id": 5,
-      "type": "H3RefModLabCombine",
+      "type": "H3RefModLabCombineV2",
       "pos": [
         840,
         -280
@@ -182,12 +182,12 @@
       "mode": 0,
       "inputs": [
         {
-          "name": "refmod_a",
+          "name": "refmods.refmod_1",
           "type": "H3_REFMOD_LAB",
           "link": 3
         },
         {
-          "name": "refmod_b",
+          "name": "refmods.refmod_2",
           "type": "H3_REFMOD_LAB",
           "link": 4
         }
@@ -210,11 +210,10 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "H3RefModLabCombine"
+        "Node name for S&R": "H3RefModLabCombineV2"
       },
       "widgets_values": [
-        1.0,
-        1.0
+        "{\"refmod_1\": 1.0, \"refmod_2\": 1.0}"
       ]
     },
     {

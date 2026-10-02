@@ -11,17 +11,13 @@ function inputPlan(node, seen = new Set()) {
         return app.graph.getNodeById(link?.origin_id);
     };
     if (node.type === "H3RefModLabLoad") return { type: "load", filename: widget("filename") };
-    if (node.type === "H3RefModLabCombine") {
-        const weights = JSON.parse(widget("extra_strengths") || "{}");
-        const inputs = node.inputs.filter((input) => input.link != null &&
-            (input.name === "refmod_a" || input.name === "refmod_b" || /^refmods\.refmod_\d+$/.test(input.name)));
-        inputs.sort((a, b) => {
-            const rank = (input) => input.name === "refmod_a" ? -2 : input.name === "refmod_b" ? -1 : Number(input.name.split("_").at(-1));
-            return rank(a) - rank(b);
-        });
+    if (node.type === "H3RefModLabCombineV2") {
+        const weights = JSON.parse(widget("strengths") || "{}");
+        const inputs = node.inputs.filter((input) => input.link != null && /^refmods\.refmod_\d+$/.test(input.name));
+        inputs.sort((a, b) => Number(a.name.split("_").at(-1)) - Number(b.name.split("_").at(-1)));
         return { type: "combine", inputs: inputs.map((input) => ({
             input: inputPlan(upstream(input.name), next),
-            strength: input.name === "refmod_a" ? widget("strength_a") : input.name === "refmod_b" ? widget("strength_b") : (weights[input.name.split(".").at(-1)] ?? 1),
+            strength: weights[input.name.split(".").at(-1)] ?? 1,
         })) };
     }
     if (node.type === "H3RefModLabSelectSources") return {

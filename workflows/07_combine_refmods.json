@@ -156,7 +156,7 @@
     },
     {
       "id": 5,
-      "type": "H3RefModLabCombine",
+      "type": "H3RefModLabCombineV2",
       "pos": [
         500,
         180
@@ -170,22 +170,22 @@
       "mode": 0,
       "inputs": [
         {
-          "name": "refmod_a",
+          "name": "refmods.refmod_1",
           "type": "H3_REFMOD_LAB",
           "link": 1
         },
         {
-          "name": "refmod_b",
+          "name": "refmods.refmod_2",
           "type": "H3_REFMOD_LAB",
           "link": 2
         },
         {
-          "name": "refmods.refmod_0",
+          "name": "refmods.refmod_3",
           "type": "H3_REFMOD_LAB",
           "link": 3
         },
         {
-          "name": "refmods.refmod_1",
+          "name": "refmods.refmod_4",
           "type": "H3_REFMOD_LAB",
           "link": 4
         }
@@ -207,12 +207,10 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "H3RefModLabCombine"
+        "Node name for S&R": "H3RefModLabCombineV2"
       },
       "widgets_values": [
-        1.0,
-        1.0,
-        "{}"
+        "{\"refmod_1\": 1.0, \"refmod_2\": 1.0}"
       ]
     },
     {
@@ -317,7 +315,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "One Combine node accepts up to 100 packs. A/B and their strengths remain compatible with existing workflows. Connect additional packs to the expanding sockets: another empty socket appears automatically. Additional strength controls appear when connected. Refresh sources on the selector previews the entire connected set before generation. Socket order determines reference labels. Connect this output to Save or Text Encode as needed."
+        "Combine accepts up to 100 packs through inputs numbered from 1. Connecting a pack reveals another empty socket. Every connected pack has the same strength slider. Replace Combine nodes in older workflows. Refresh sources previews the connected set. Numerical input order determines reference labels. Connect the output to Save or Text Encode as needed."
       ]
     }
   ],

@@ -56,30 +56,32 @@ def audio_pack():
 
 
 class RefModTests(unittest.TestCase):
-    def test_expanding_combine_order_strength_and_legacy_call(self):
+    def test_uniform_combine_order_and_strength(self):
         original = pack()
-        combined = nodes.Combine.execute(original, pack("beth"), 1, 0.5,
-            refmods={"refmod_10": audio_pack(), "refmod_2": video_pack()},
-            extra_strengths='{"refmod_2":0,"refmod_10":0.25}').result[0]
+        combined = nodes.Combine.execute(refmods={"refmod_10": audio_pack(), "refmod_3": video_pack(), "refmod_2": pack("beth"), "refmod_1": original}, strengths='{"refmod_2":0.5,"refmod_3":0,"refmod_10":0.25}').result[0]
         self.assertEqual([entry["name"] for entry in combined["entries"]], ["alice", "beth", "motion", "voice"])
         self.assertEqual([entry["strength"] for entry in combined["entries"]], [1, 0.5, 0, 0.25])
         self.assertEqual(original["entries"][0]["strength"], 1)
-        self.assertEqual(len(nodes.Combine.execute(original, pack("beth"), 1, 1).result[0]["entries"]), 2)
         self.assertEqual(nodes.Combine.execute().result[0]["entries"], [])
-        for strengths in ('[]', 'invalid', '{"refmod_0":3}', '{"refmod_0":"1"}'):
+        for strengths in ('[]', 'invalid', '{"refmod_1":3}', '{"refmod_1":"1"}', '{"refmod_0":1}'):
             with self.assertRaises(ValueError):
-                nodes.Combine.execute(refmods={"refmod_0": pack()}, extra_strengths=strengths)
+                nodes.Combine.execute(refmods={"refmod_1": pack()}, strengths=strengths)
+        for name in ("refmod_0", "refmod_101", "refmod_01", "refmod_a"):
+            with self.assertRaises(ValueError):
+                nodes.Combine.execute(refmods={name: pack()})
+        self.assertEqual(len(nodes.Combine.execute(refmods={f"refmod_{i}": pack() for i in range(1, 101)}).result[0]["entries"]), 100)
 
-    def test_native_autogrow_schema_parses_additional_packs(self):
+    def test_native_autogrow_schema_parses_uniform_packs(self):
         from comfy_api.latest import _io
-        live = {"refmod_a": pack(), "strength_a": 0.5, "strength_b": 1,
-            "refmods.refmod_0": video_pack(), "refmods.refmod_12": audio_pack()}
+        live = {"refmods.refmod_1": pack(), "strengths": '{"refmod_1":0.5}',
+            "refmods.refmod_2": video_pack(), "refmods.refmod_12": audio_pack()}
         schema, _, v3_data = _io.get_finalized_class_inputs(nodes.Combine.INPUT_TYPES(), live)
         self.assertIn("refmods.refmod_12", schema["optional"])
         nested = _io.build_nested_inputs(live, v3_data)
-        self.assertEqual(set(nested["refmods"]), {"refmod_0", "refmod_12"})
+        self.assertEqual(set(nested["refmods"]), {"refmod_1", "refmod_2", "refmod_12"})
         result = nodes.Combine.execute(**nested).result[0]
         self.assertEqual([core.kind(entry) for entry in result["entries"]], ["image", "video", "audio"])
+        self.assertEqual(result["entries"][0]["strength"], 0.5)
 
     def test_expanding_combine_preview_matches_execution(self):
         with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
@@ -87,7 +89,7 @@ class RefModTests(unittest.TestCase):
             with patch.dict(nodes.folder_paths.folder_names_and_paths, {nodes.FOLDER: ([directory], {".safetensors"})}), patch.dict(nodes.folder_paths.filename_list_cache, {}, clear=True):
                 plan = {"type": "combine", "inputs": [{"input": {"type": "load", "filename": path.name}, "strength": strength} for path, strength in zip(saved, (1, 0, 0.5))]}
                 result = picker_routes.resolve_plan(plan)
-                expected = nodes.Combine.execute(pack(), video_pack(), 1, 0, refmods={"refmod_0": audio_pack()}, extra_strengths='{"refmod_0":0.5}').result[0]
+                expected = nodes.Combine.execute(refmods={"refmod_1": pack(), "refmod_2": video_pack(), "refmod_3": audio_pack()}, strengths='{"refmod_2":0,"refmod_3":0.5}').result[0]
                 self.assertEqual(core.source_ids(result), core.source_ids(expected))
                 self.assertEqual(core.describe(result), core.describe(expected))
                 legacy = picker_routes.resolve_plan({"type": "combine", "a": {"type": "load", "filename": saved[0].name}, "b": {"type": "load", "filename": saved[1].name}, "strength_a": 1, "strength_b": 1})
@@ -305,7 +307,7 @@ class RefModTests(unittest.TestCase):
                 self.assertEqual(len(json.loads(response.text)["sources"]), 1)
 
     def test_embedded_workflow_and_api_prompt(self):
-        workflow = {"version": 0.4, "nodes": [{"id": 1, "title": "Création"}], "links": []}
+        workflow = {"version": 0.4, "nodes": [{"id": 1, "title": "CrÃ©ation"}], "links": []}
         prompt = {"1": {"class_type": "H3RefModLabCreate", "inputs": {"name": "alice"}}}
         with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
             saved = core.save_pack(pack(), directory, "embedded", workflow=workflow, prompt=prompt)
@@ -538,10 +540,10 @@ class RefModTests(unittest.TestCase):
                         self.assertEqual(result[3], {}, (path.name, result))
                         # Verify optional native expanding ports are valid in an actual API graph.
                         for node in graph.values():
-                            if node["class_type"] == "H3RefModLabCombine":
-                                node["inputs"]["refmods.refmod_0"] = node["inputs"]["refmod_a"]
-                                node["inputs"]["refmods.refmod_7"] = node["inputs"]["refmod_b"]
-                                node["inputs"]["extra_strengths"] = '{"refmod_7":0.5}'
+                            if node["class_type"] == "H3RefModLabCombineV2":
+                                node["inputs"]["refmods.refmod_7"] = node["inputs"]["refmods.refmod_1"]
+                                node["inputs"]["refmods.refmod_100"] = node["inputs"]["refmods.refmod_2"]
+                                node["inputs"]["strengths"] = '{"refmod_7":0.5}'
                         expanded = await execution.validate_prompt("expanding-refmod-test", graph, None)
                         self.assertTrue(expanded[0], (path.name, expanded))
                 finally:

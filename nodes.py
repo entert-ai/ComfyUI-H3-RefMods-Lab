@@ -257,29 +257,26 @@ class Load(io.ComfyNode):
 class Combine(io.ComfyNode):
     @classmethod
     def define_schema(cls):
-        return io.Schema(node_id="H3RefModLabCombine", display_name="Combine H3 RefMods", category=CATEGORY,
-            description="Combine connected packs in socket order. A/B remain compatible with existing workflows; additional sockets grow automatically, up to 100 packs total. Each pack has its own strength. Zero strength omits it from H3 and Qwen.",
-            inputs=[REFMOD.Input("refmod_a", optional=True), REFMOD.Input("refmod_b", optional=True),
-                io.Float.Input("strength_a", default=1.0, min=0, max=2, step=0.05),
-                io.Float.Input("strength_b", default=1.0, min=0, max=2, step=0.05),
-                io.Autogrow.Input("refmods", optional=True, template=io.Autogrow.TemplatePrefix(
-                    input=REFMOD.Input("refmod"), prefix="refmod_", min=0, max=98)),
-                io.String.Input("extra_strengths", default="{}", optional=True)],
+        return io.Schema(node_id="H3RefModLabCombineV2", display_name="Combine H3 RefMods", category=CATEGORY,
+            description="Combine up to 100 packs in numerical input order. Connect RefMod 1 to reveal RefMod 2, and so on. Every connected pack has the same strength slider. Zero strength omits it from H3 and Qwen. Replace Combine nodes in older workflows before using this version.",
+            inputs=[io.Autogrow.Input("refmods", optional=True, template=io.Autogrow.TemplateNames(
+                    input=REFMOD.Input("refmod"), names=[f"refmod_{i}" for i in range(1, 101)], min=0)),
+                io.String.Input("strengths", default="{}", optional=True)],
             outputs=[REFMOD.Output(), io.String.Output(display_name="reference_map")])
 
     @classmethod
-    def execute(cls, refmod_a=None, refmod_b=None, strength_a=1.0, strength_b=1.0, refmods=None, extra_strengths="{}"):
+    def execute(cls, refmods=None, strengths="{}"):
         try:
-            weights = json.loads(extra_strengths)
+            weights = json.loads(strengths)
         except (TypeError, json.JSONDecodeError) as error:
-            raise ValueError("Invalid additional input strengths. Reset the Combine strengths before generating.") from error
+            raise ValueError("Invalid input strengths. Reset the Combine strengths before generating.") from error
         if not isinstance(weights, dict):
-            raise ValueError("Additional input strengths must be a JSON object.")
+            raise ValueError("Input strengths must be a JSON object.")
         additional = refmods or {}
-        if not isinstance(additional, dict) or any(not name.startswith("refmod_") or not name[7:].isdigit() or int(name[7:]) >= 98 for name in additional):
+        valid_names = {f"refmod_{i}" for i in range(1, 101)}
+        if not isinstance(additional, dict) or any(name not in valid_names for name in additional) or any(name not in valid_names for name in weights):
             raise ValueError("Invalid expanding RefMod input names.")
-        inputs = [(refmod_a, strength_a), (refmod_b, strength_b)]
-        inputs.extend((additional[name], weights.get(name, 1.0)) for name in sorted(additional, key=lambda name: int(name[7:])))
+        inputs = [(additional[name], weights.get(name, 1.0)) for name in sorted(additional, key=lambda name: int(name[7:]))]
         pack = core.combine_many(inputs)
         return io.NodeOutput(pack, core.describe(pack))
 

@@ -68,11 +68,11 @@ placeholder filenames deliberately contain no personal content.
    store appearance and voice together. Describe the voice's role explicitly in
    the generation prompt using Inspect's Audio labels.
 7. **07_combine_refmods.json** — four packs feeding one expanding Combine node.
-   A/B remain available for existing workflows. Connect further packs to the next
-   empty socket; ComfyUI adds another automatically, up to 100 inputs total. Each
-   additional connected pack gets a strength control saved with the workflow.
-   Unconnected sockets are ignored; reference order is A, B, then additional packs
-   in socket order. Refresh sources supports the whole combined set.
+   Inputs are numbered from 1. Connect another pack to the next empty socket;
+   ComfyUI adds another automatically, up to 100 inputs total. Every connected
+   pack has the same strength slider, saved with the workflow. Unconnected sockets
+   are ignored; reference order follows input numbers. Refresh sources supports
+   the whole combined set.
 
 The generation workflows use installed H3 Ref2VA INT8 weights, H3 Qwen3-VL NVFP4,
 both VAEs, Comfy Kitchen attention, native sol-attn, Euler/simple, 20 steps and
@@ -90,7 +90,7 @@ Picture, Video and Audio labels. The output workflows decode and save audio.
 | Create H3 Audio RefMod | Encode one mono/stereo standalone audio interval. |
 | Save H3 RefMod | Save a numbered `.safetensors` pack and return its exact path. |
 | Load H3 RefMod | Load a Lab v1 or v2 pack on CPU; changed files invalidate its cache. |
-| Combine H3 RefMods | Combine up to 100 packs through expanding inputs, with individual strengths; preserves legacy A/B workflows. |
+| Combine H3 RefMods | Combine up to 100 packs through expanding inputs, with individual strengths; uniform inputs numbered from 1 and matching sliders for every connected pack. |
 | Select H3 RefMod Sources | Choose a subset using thumbnails and checkboxes; no re-encoding or file changes. |
 | Apply H3 RefMod (Latents Only) | Append latents while preserving existing refs, guides and conditioning entries. |
 | H3 RefMod Text Encode | Present saved images, 2 fps video frames and audio labels to H3 Qwen; attach all saved latents. |
@@ -101,6 +101,8 @@ Text Encode creates fresh conditioning and does not merge an existing reference
 workflow. Add native guides downstream if needed. Inspect's numbering describes
 the pack's own Text Encode path; latent-only Apply cannot assign Qwen labels to
 images Qwen has not seen.
+
+**Combine node update:** Replace existing Combine nodes and reconnect their packs in older workflows. The inputs are now `refmod_1` through `refmod_100`, with matching 0–2 strength sliders. Existing saved RefMod files remain compatible. Updated example workflows use the new layout. API inputs use `refmods.refmod_1`, etc., and a `strengths` JSON object such as `{"refmod_1":1,"refmod_2":0.5}`.
 
 Place a selector after each subject's Load node and before Combine or Text Encode.
 Refresh supports saved packs through Load, Combine and other Select Sources nodes.

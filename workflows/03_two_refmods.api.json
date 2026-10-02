@@ -32,18 +32,17 @@
     }
   },
   "5": {
-    "class_type": "H3RefModLabCombine",
+    "class_type": "H3RefModLabCombineV2",
     "inputs": {
-      "refmod_a": [
+      "refmods.refmod_1": [
         "2",
         0
       ],
-      "refmod_b": [
+      "refmods.refmod_2": [
         "4",
         0
       ],
-      "strength_a": 1.0,
-      "strength_b": 1.0
+      "strengths": "{\"refmod_1\": 1.0, \"refmod_2\": 1.0}"
     }
   },
   "6": {
