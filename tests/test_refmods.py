@@ -346,31 +346,54 @@ class RefModTests(unittest.TestCase):
             self.assertEqual(loaded["entries"][0]["description"], "reference description")
             self.assertEqual(len(list(Path(directory).glob("*.safetensors"))), 2)
 
-    def test_file_numbers_shared_across_names_and_survive_deletion(self):
+    def test_file_numbers_per_name_and_survive_deletion(self):
         with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
             one = core.save_pack(pack(), directory, "first")
             two = core.save_pack(pack(), directory, "second")
             self.assertEqual(one.name, "first_00001.safetensors")
-            self.assertEqual(two.name, "second_00002.safetensors")
+            self.assertEqual(two.name, "second_00001.safetensors")
             one.unlink()
             two.unlink()
-            self.assertEqual(core.save_pack(pack(), directory, "first").name, "first_00003.safetensors")
+            self.assertEqual(core.save_pack(pack(), directory, "first").name, "first_00002.safetensors")
+            self.assertEqual(core.save_pack(pack(), directory, "second").name, "second_00002.safetensors")
 
     def test_file_numbers_seed_existing_folder_and_imports_and_expand(self):
         with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
             root = Path(directory)
             (root / "old_name_00042.safetensors").touch()
-            self.assertEqual(core.save_pack(pack(), root, "new").name, "new_00043.safetensors")
+            self.assertEqual(core.save_pack(pack(), root, "new").name, "new_00001.safetensors")
+            (root / "old_name_00042.safetensors").unlink()
+            self.assertEqual(core.save_pack(pack(), root, "old_name").name, "old_name_00043.safetensors")
             (root / "imported_99999.safetensors").touch()
+            self.assertEqual(core.save_pack(pack(), root, "new").name, "new_00002.safetensors")
+            (root / "new_99999.safetensors").touch()
             self.assertEqual(core.save_pack(pack(), root, "new").name, "new_100000.safetensors")
+
+    def test_file_numbers_upgrade_legacy_shared_counter(self):
+        import sqlite3
+        with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
+            root = Path(directory)
+            with sqlite3.connect(root / ".h3-refmods-counter.sqlite3") as database:
+                database.execute("CREATE TABLE counter (id INTEGER PRIMARY KEY, last INTEGER)")
+                database.execute("INSERT INTO counter VALUES (1, 400)")
+            database.close()
+            (root / "existing_00004.safetensors").touch()
+            self.assertEqual(core.save_pack(pack(), root, "fresh").name, "fresh_00001.safetensors")
+            self.assertEqual(core.save_pack(pack(), root, "existing").name, "existing_00005.safetensors")
+
+    def test_file_numbers_case_insensitive_and_exact_prefix(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
+            self.assertEqual(core.save_pack(pack(), directory, "Alice").name, "Alice_00001.safetensors")
+            self.assertEqual(core.save_pack(pack(), directory, "alice").name, "alice_00002.safetensors")
+            self.assertEqual(core.save_pack(pack(), directory, "alice_extra").name, "alice_extra_00001.safetensors")
 
     def test_concurrent_file_number_reservations_are_unique(self):
         from concurrent.futures import ThreadPoolExecutor
         with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
             with ThreadPoolExecutor(max_workers=8) as executor:
-                numbers = list(executor.map(lambda _: core._next_file_number(Path(directory)), range(24)))
+                numbers = list(executor.map(lambda _: core._next_file_number(Path(directory), "shared"), range(24)))
             self.assertEqual(sorted(numbers), list(range(1, 25)))
-            self.assertEqual(core._next_file_number(Path(directory)), 25)
+            self.assertEqual(core._next_file_number(Path(directory), "shared"), 25)
 
     def test_failed_publication_does_not_reuse_number(self):
         with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:

@@ -287,8 +287,8 @@ def source_catalog(pack):
     return result
 
 
-def _next_file_number(directory):
-    """Reserve a durable, folder-wide ID before publishing the file.
+def _next_file_number(directory, name):
+    """Reserve a durable ID for this filename prefix before publication.
 
     SQLite serializes reservations across processes. A failed publication may
     leave a gap, but an allocated ID is never reused while this database exists.
@@ -296,16 +296,18 @@ def _next_file_number(directory):
     with closing(sqlite3.connect(str(directory / ".h3-refmods-counter.sqlite3"), timeout=30)) as connection:
         with connection:
             connection.execute("BEGIN IMMEDIATE")
-            connection.execute("CREATE TABLE IF NOT EXISTS counter (id INTEGER PRIMARY KEY CHECK(id = 1), last INTEGER NOT NULL CHECK(last >= 0))")
-            row = connection.execute("SELECT last FROM counter WHERE id = 1").fetchone()
-            highest = row[0] if row else 0
-            # Seed older folders and account for manually imported higher IDs.
+            connection.execute("CREATE TABLE IF NOT EXISTS named_counters (name TEXT PRIMARY KEY, last INTEGER NOT NULL CHECK(last >= 0))")
+            # Seed every existing prefix, including when upgrading the former
+            # shared counter. The legacy counter cannot identify deleted names.
+            # Case-fold keys so Alice/alice share a history on Windows and Linux.
             for path in directory.iterdir():
-                match = re.search(r"_(\d+)\.safetensors$", path.name, re.IGNORECASE)
+                match = re.fullmatch(r"([A-Za-z0-9][A-Za-z0-9_-]{0,79})_(\d+)\.safetensors", path.name, re.IGNORECASE)
                 if match and path.is_file():
-                    highest = max(highest, int(match.group(1)))
-            number = highest + 1
-            connection.execute("INSERT INTO counter (id, last) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET last = excluded.last", (number,))
+                    connection.execute("INSERT INTO named_counters (name, last) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET last = MAX(named_counters.last, excluded.last)", (match.group(1).casefold(), int(match.group(2))))
+            key = name.casefold()
+            row = connection.execute("SELECT last FROM named_counters WHERE name = ?", (key,)).fetchone()
+            number = (row[0] if row else 0) + 1
+            connection.execute("INSERT INTO named_counters (name, last) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET last = excluded.last", (key, number))
         return number
 
 
@@ -335,7 +337,7 @@ def save_pack(pack, directory, name, workflow=None, prompt=None):
             if header_size + 8 > 4 * 1024 * 1024:
                 raise ValueError("Embedded workflow exceeds ComfyUI's 4 MiB metadata import limit. Reduce the graph or turn off Embed workflow.")
         while True:
-            counter = _next_file_number(directory)
+            counter = _next_file_number(directory, name)
             destination = directory / f"{name}_{counter:05d}.safetensors"
             try:
                 os.link(temporary, destination)

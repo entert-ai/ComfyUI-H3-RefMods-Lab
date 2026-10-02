@@ -32,11 +32,15 @@ placeholder filenames deliberately contain no personal content.
    includes its filenames, prompts and settings. Turn the option off if unwanted;
    ComfyUI's `--disable-metadata` flag also disables embedding. API-only saves
    contain the API prompt but need `extra_pnginfo.workflow` for the canvas graph.
-   Filename suffixes use one increasing counter across the entire save folder:
-   `subject_00001.safetensors`, then `voice_00002.safetensors`, and so on. Deleting
+   Filename suffixes use a persistent counter per name within the save folder:
+   `subject_00001.safetensors`, `voice_00001.safetensors`, then
+   `subject_00002.safetensors`, and so on. Deleting
    old packs does not reuse their numbers. The hidden `.h3-refmods-counter.sqlite3`
    file retains the counter; include it when backing up or moving the folder.
-   An existing folder seeds the counter from its highest numbered filename.
+   An existing folder seeds each name from its highest numbered filename. Names
+   differing only in letter case share one counter. Upgrading from the former
+   shared counter preserves existing filenames; new names start at 00001. That
+   old shared counter cannot reconstruct the names of previously deleted files.
    Failed saves may leave harmless gaps. Five digits are minimum padding: after
    99999 the number becomes 100000. Saves still never overwrite existing files.
 2. Refresh ComfyUI's node/model definitions (reload the browser if needed), then
