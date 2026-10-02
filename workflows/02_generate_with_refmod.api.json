@@ -53,7 +53,8 @@
         0
       ],
       "prompt": "[Subject Definitions]\n<Subject 1> is the subject shown in <Picture 1>.\n\n[Retention Analysis]\nRetain the appearance of <Subject 1> from <Picture 1>.\n\n[Summary]\n<Subject 1> turns toward the camera and waves.\n\n[Visual Style]\nNatural lighting, a simple background, a steady medium shot.\n\n[Soundscape]\nQuiet room ambience.\n\n[Script]\n[Shot 1]\n<Subject 1> turns toward the camera and waves once.\n",
-      "max_tokens": 8192
+      "max_tokens": 8192,
+      "include_saved_instructions": false
     }
   },
   "7": {

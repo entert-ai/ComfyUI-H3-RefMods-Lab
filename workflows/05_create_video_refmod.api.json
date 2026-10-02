@@ -56,7 +56,13 @@
         "4",
         0
       ],
-      "audio_vae_label": "minimax_h3_audio_vae_fp32.safetensors"
+      "audio_vae_label": "minimax_h3_audio_vae_fp32.safetensors",
+      "subject_name": "Alice",
+      "subject_key": "example-alice",
+      "retention_strategy": "partially_preserved",
+      "retention_details": "Keep identity; allow changes to clothing and background.",
+      "audio_retention_strategy": "reference",
+      "audio_retention_details": "Use voice timbre only."
     }
   },
   "6": {

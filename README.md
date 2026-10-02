@@ -74,6 +74,10 @@ placeholder filenames deliberately contain no personal content.
    are ignored; reference order follows input numbers. Refresh sources supports
    the whole combined set.
 
+8. **08_saved_instructions.json** — two packs supplying Alice's portrait and body shape.
+   Set Instructions attaches matching subject keys and separate retention details;
+   Text Encode builds the reference instructions. Save the edited packs to persist them.
+
 The generation workflows use installed H3 Ref2VA INT8 weights, H3 Qwen3-VL NVFP4,
 both VAEs, Comfy Kitchen attention, native sol-attn, Euler/simple, 20 steps and
 fixed seed 42. Initial output is 768×448 at 24 fps and 124 frames (~5.17 seconds).
@@ -93,7 +97,8 @@ Picture, Video and Audio labels. The output workflows decode and save audio.
 | Combine H3 RefMods | Combine up to 100 packs through expanding inputs, with individual strengths; uniform inputs numbered from 1 and matching sliders for every connected pack. |
 | Select H3 RefMod Sources | Choose a subset using thumbnails and checkboxes; no re-encoding or file changes. |
 | Apply H3 RefMod (Latents Only) | Append latents while preserving existing refs, guides and conditioning entries. |
-| H3 RefMod Text Encode | Present saved images, 2 fps video frames and audio labels to H3 Qwen; attach all saved latents. |
+| H3 RefMod Text Encode | Optionally generate saved reference instructions; present media to H3 Qwen, attach latents and output the final prompt. |
+| Set H3 RefMod Instructions | Edit one subject's source descriptions and retention metadata without re-encoding. |
 | Inspect H3 RefMod | Show active reference labels, resolution, VAE label and DiT token count; output thumbnails for Preview Image. |
 
 **Text Encode already attaches the references. Do not also Apply the same pack.**
@@ -103,6 +108,36 @@ the pack's own Text Encode path; latent-only Apply cannot assign Qwen labels to
 images Qwen has not seen.
 
 **Combine node update:** Replace existing Combine nodes and reconnect their packs in older workflows. The inputs are now `refmod_1` through `refmod_100`, with matching 0–2 strength sliders. Existing saved RefMod files remain compatible. Updated example workflows use the new layout. API inputs use `refmods.refmod_1`, etc., and a `strengths` JSON object such as `{"refmod_1":1,"refmod_2":0.5}`.
+
+Saved instructions are optional metadata, carried by each source inside the `.safetensors`
+file. All Create nodes expose `subject_name` (blank uses `name`), `subject_key`,
+`retention_strategy`, and `retention_details`. A Create batch shares one subject.
+Use a separate Create branch for each contribution/description. A blank key generates
+an independent subject ID; the same explicit key and name deliberately joins sources
+created in different branches. Names alone never merge. Keys are case sensitive.
+
+Enable **include_saved_instructions** in Text Encode to prepend `[Subject Definitions]`
+and `[Retention Analysis]` to your scene prompt. It is off by default for existing
+manual prompts. Remove competing manual sections when enabled; duplicate sections
+produce an explicit error. `final_prompt` is the exact string sent to H3. Subject,
+Picture, Video and Audio numbers follow the active sources after combining and
+selection; zero strength omits a source. Check the reference map before writing
+numbered references in your scene. Metadata descriptions/details should use plain
+text rather than hard-coded reference numbers or ambiguous pronouns.
+
+Visual retention presets are `unspecified`, `fully_preserved`, `partially_preserved`,
+`attribute_transfer`, and `weak_reference`. Audio uses `unspecified`, `fully_copy`,
+`partially_copy`, `reference`, and `weak_reference`. Paired video/audio has separate
+soundtrack retention controls. These are prompt instructions, not guaranteed outcomes
+or changes to latent strength. Text grows slightly; latent tensors and DiT budgets
+remain unchanged. Old packs load without subject metadata and can still contribute
+source descriptions when enabled.
+
+**Set H3 RefMod Instructions** edits an existing pack without a VAE. It replaces
+metadata on every incoming source, assigning them one subject; use Select Sources
+first for a subset or one subject from a combined pack. Empty description/details
+clear those fields. For standalone audio in this editor, use the audio retention
+controls. Save the output to persist the changes. Original packs remain intact.
 
 Place a selector after each subject's Load node and before Combine or Text Encode.
 Refresh supports saved packs through Load, Combine and other Select Sources nodes.

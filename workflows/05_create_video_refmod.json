@@ -171,7 +171,7 @@
       ],
       "size": [
         430,
-        550
+        900
       ],
       "flags": {},
       "order": 4,
@@ -231,7 +231,13 @@
         3.0,
         512,
         8192,
-        "minimax_h3_audio_vae_fp32.safetensors"
+        "minimax_h3_audio_vae_fp32.safetensors",
+        "Alice",
+        "example-alice",
+        "partially_preserved",
+        "Keep identity; allow changes to clothing and background.",
+        "reference",
+        "Use voice timbre only."
       ]
     },
     {

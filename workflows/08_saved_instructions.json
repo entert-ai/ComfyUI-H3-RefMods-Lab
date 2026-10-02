@@ -1,6 +1,6 @@
 {
-  "last_node_id": 25,
-  "last_link_id": 25,
+  "last_node_id": 27,
+  "last_link_id": 27,
   "nodes": [
     {
       "id": 1,
@@ -66,7 +66,7 @@
           "name": "refmod",
           "type": "H3_REFMOD_LAB",
           "links": [
-            3
+            26
           ],
           "slot_index": 0
         },
@@ -148,7 +148,7 @@
           "name": "refmod",
           "type": "H3_REFMOD_LAB",
           "links": [
-            4
+            27
           ],
           "slot_index": 0
         },
@@ -170,7 +170,7 @@
       "id": 5,
       "type": "H3RefModLabCombineV2",
       "pos": [
-        840,
+        1290,
         -280
       ],
       "size": [
@@ -220,7 +220,7 @@
       "id": 6,
       "type": "H3RefModLabInspect",
       "pos": [
-        840,
+        1290,
         520
       ],
       "size": [
@@ -262,7 +262,7 @@
       "id": 7,
       "type": "PreviewImage",
       "pos": [
-        840,
+        1290,
         820
       ],
       "size": [
@@ -289,7 +289,7 @@
       "id": 8,
       "type": "CLIPLoader",
       "pos": [
-        0,
+        450,
         1160
       ],
       "size": [
@@ -323,7 +323,7 @@
       "id": 9,
       "type": "H3RefModLabTextEncode",
       "pos": [
-        840,
+        1290,
         0
       ],
       "size": [
@@ -371,16 +371,16 @@
         "Node name for S&R": "H3RefModLabTextEncode"
       },
       "widgets_values": [
-        "[Subject Definitions]\n<Subject 1> is the subject shown in <Picture 1>.\n<Subject 2> is the subject shown in <Picture 2>.\n\n[Retention Analysis]\nRetain the appearance of <Subject 1> from <Picture 1>.\n\n[Summary]\n<Subject 1> and <Subject 2> stand side by side and wave.\n\n[Visual Style]\nNatural lighting, a simple background, a steady medium shot.\n\n[Soundscape]\nQuiet room ambience.\n\n[Script]\n[Shot 1]\n<Subject 1> stands on the left. <Subject 2> stands on the right. Both wave once.\n",
+        "[Summary]\n<Subject 1> turns toward the camera and waves.\n\n[Visual Style]\nNatural lighting, a steady medium shot.\n\n[Soundscape]\nQuiet room ambience.\n\n[Script]\n[Shot 1]\n<Subject 1> turns toward the camera and waves once.",
         8192,
-        false
+        true
       ]
     },
     {
       "id": 10,
       "type": "EmptyMiniMaxH3LatentAV",
       "pos": [
-        1270,
+        1720,
         360
       ],
       "size": [
@@ -414,7 +414,7 @@
       "id": 11,
       "type": "UNETLoader",
       "pos": [
-        0,
+        450,
         1470
       ],
       "size": [
@@ -447,7 +447,7 @@
       "id": 12,
       "type": "ModelAttentionBackend",
       "pos": [
-        410,
+        860,
         1180
       ],
       "size": [
@@ -485,7 +485,7 @@
       "id": 13,
       "type": "BlockSparseAttention",
       "pos": [
-        840,
+        1290,
         1150
       ],
       "size": [
@@ -532,7 +532,7 @@
       "id": 14,
       "type": "BasicGuider",
       "pos": [
-        1270,
+        1720,
         0
       ],
       "size": [
@@ -573,7 +573,7 @@
       "id": 15,
       "type": "BasicScheduler",
       "pos": [
-        1270,
+        1720,
         650
       ],
       "size": [
@@ -613,7 +613,7 @@
       "id": 16,
       "type": "KSamplerSelect",
       "pos": [
-        1270,
+        1720,
         950
       ],
       "size": [
@@ -645,7 +645,7 @@
       "id": 17,
       "type": "RandomNoise",
       "pos": [
-        1270,
+        1720,
         1250
       ],
       "size": [
@@ -678,7 +678,7 @@
       "id": 18,
       "type": "SamplerCustomAdvanced",
       "pos": [
-        1700,
+        2150,
         0
       ],
       "size": [
@@ -741,7 +741,7 @@
       "id": 19,
       "type": "VAELoader",
       "pos": [
-        1700,
+        2150,
         400
       ],
       "size": [
@@ -773,7 +773,7 @@
       "id": 20,
       "type": "VAELoader",
       "pos": [
-        1700,
+        2150,
         700
       ],
       "size": [
@@ -805,7 +805,7 @@
       "id": 21,
       "type": "VAEDecode",
       "pos": [
-        2120,
+        2570,
         0
       ],
       "size": [
@@ -846,7 +846,7 @@
       "id": 22,
       "type": "VAEDecodeAudio",
       "pos": [
-        2120,
+        2570,
         350
       ],
       "size": [
@@ -887,7 +887,7 @@
       "id": 23,
       "type": "CreateVideo",
       "pos": [
-        2530,
+        2980,
         0
       ],
       "size": [
@@ -933,7 +933,7 @@
       "id": 24,
       "type": "SaveVideo",
       "pos": [
-        2940,
+        3390,
         0
       ],
       "size": [
@@ -971,7 +971,7 @@
       "id": 25,
       "type": "Note",
       "pos": [
-        -420,
+        30,
         -280
       ],
       "size": [
@@ -985,7 +985,107 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "Select your saved Lab pack(s) in Load H3 RefMod. Inspect shows the actual Picture map: a pack can contain multiple pictures, so revise subject definitions accordingly. Text Encode attaches refs itself; never also Apply those refs. Strength 1 is the baseline. Start at 768\u00d7448, 124 frames (~5.17s), seed 42, 20 steps. Models are selected from the installed schemas; adjust if needed. This is a test workflow, not Director integration."
+        "Two sources supply one subject: portrait and body shape. Shared subject key example-alice groups both as Alice. Text Encode generates definitions and retention using the active source labels. Its final_prompt output is the exact prompt sent to H3. Select Sources first to annotate only a subset. Save each instruction node output if you want to persist metadata."
+      ]
+    },
+    {
+      "id": 26,
+      "type": "H3RefModLabSetInstructions",
+      "pos": [
+        880,
+        0
+      ],
+      "size": [
+        410,
+        590
+      ],
+      "flags": {},
+      "order": 25,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "refmod",
+          "type": "H3_REFMOD_LAB",
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "refmod",
+          "type": "H3_REFMOD_LAB",
+          "links": [
+            3
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "details",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "H3RefModLabSetInstructions"
+      },
+      "widgets_values": [
+        "a portrait",
+        "Alice",
+        "example-alice",
+        "partially_preserved",
+        "Preserve facial identity.",
+        "unspecified",
+        ""
+      ]
+    },
+    {
+      "id": 27,
+      "type": "H3RefModLabSetInstructions",
+      "pos": [
+        880,
+        700
+      ],
+      "size": [
+        410,
+        590
+      ],
+      "flags": {},
+      "order": 26,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "refmod",
+          "type": "H3_REFMOD_LAB",
+          "link": 27
+        }
+      ],
+      "outputs": [
+        {
+          "name": "refmod",
+          "type": "H3_REFMOD_LAB",
+          "links": [
+            4
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "details",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "H3RefModLabSetInstructions"
+      },
+      "widgets_values": [
+        "body shape",
+        "Alice",
+        "example-alice",
+        "partially_preserved",
+        "Preserve proportions; clothing may change.",
+        "unspecified",
+        ""
       ]
     }
   ],
@@ -1008,7 +1108,7 @@
     ],
     [
       3,
-      2,
+      26,
       0,
       5,
       0,
@@ -1016,7 +1116,7 @@
     ],
     [
       4,
-      4,
+      27,
       0,
       5,
       1,
@@ -1189,6 +1289,22 @@
       24,
       0,
       "VIDEO"
+    ],
+    [
+      26,
+      2,
+      0,
+      26,
+      0,
+      "H3_REFMOD_LAB"
+    ],
+    [
+      27,
+      4,
+      0,
+      27,
+      0,
+      "H3_REFMOD_LAB"
     ]
   ],
   "groups": [],

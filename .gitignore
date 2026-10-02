@@ -31,3 +31,6 @@
 !workflows/06_create_audio_refmod.json
 !workflows/07_combine_refmods.api.json
 !workflows/07_combine_refmods.json
+
+!workflows/08_saved_instructions.json
+!workflows/08_saved_instructions.api.json

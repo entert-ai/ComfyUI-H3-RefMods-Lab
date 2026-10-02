@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import tempfile
 import sqlite3
+import uuid
 from contextlib import closing
 
 import numpy as np
@@ -20,6 +21,72 @@ import torch
 
 FORMAT = "h3-refmods-lab"
 VERSION = 2
+VISUAL_RETENTION = ("unspecified", "fully_preserved", "partially_preserved", "attribute_transfer", "weak_reference")
+AUDIO_RETENTION = ("unspecified", "fully_copy", "partially_copy", "reference", "weak_reference")
+INSTRUCTION_FIELDS = ("subject_id", "subject_name", "retention_strategy", "retention_details", "audio_retention_strategy", "audio_retention_details")
+
+
+def instruction_metadata(name, subject_name="", subject_key="", retention_strategy="unspecified", retention_details="", audio_retention_strategy="unspecified", audio_retention_details="", audio_only=False):
+    """A supplied key deliberately joins sources; display names never do."""
+    if retention_strategy not in (AUDIO_RETENTION if audio_only else VISUAL_RETENTION) or audio_retention_strategy not in AUDIO_RETENTION:
+        raise ValueError("Invalid retention strategy for this reference modality.")
+    key = subject_key.strip()
+    return {"subject_id": "key:" + hashlib.sha256(key.encode()).hexdigest() if key else "auto:" + str(uuid.uuid4()),
+            "subject_name": subject_name.strip() or name.strip(),
+            "retention_strategy": retention_strategy, "retention_details": retention_details.strip(),
+            "audio_retention_strategy": audio_retention_strategy, "audio_retention_details": audio_retention_details.strip()}
+
+
+def reference_instructions(entries):
+    """Assign labels only to the final active sources, exactly as Qwen does."""
+    subjects, definitions, retention = {}, [], []
+    counters = {"Picture": 0, "Video": 0, "Audio": 0}
+    for entry in entries:
+        if entry.get("strength", 1) <= 0:
+            continue
+        subject_id, subject_name = entry.get("subject_id"), entry.get("subject_name", "")
+        subject = None
+        if subject_id and subject_name:
+            if subject_id in subjects and subjects[subject_id][1] != subject_name:
+                raise ValueError("Sources sharing a subject key have different subject names. Use the same name or separate keys.")
+            if subject_id not in subjects:
+                subjects[subject_id] = (len(subjects) + 1, subject_name)
+                definitions.append(f"<Subject {len(subjects)}> is {subject_name.rstrip('.')}.")
+            subject = f"<Subject {subjects[subject_id][0]}>"
+        modality = kind(entry)
+        labels = ["Picture"] if modality == "image" else ["Audio", "Video"] if modality == "video_audio" else ["Audio"] if modality == "audio" else ["Video"]
+        for label in labels:
+            counters[label] += 1
+            tag = f"<{label} {counters[label]}>"
+            description = entry.get("description", "").strip().rstrip(".")
+            # Paired audio gets its own role, rather than a duplicated visual description.
+            if modality == "video_audio" and label == "Audio":
+                description = "the synchronized soundtrack"
+            if not description and subject:
+                description = {"Picture": "a visual reference", "Video": "a video reference", "Audio": "an audio reference"}[label]
+            if description:
+                definitions.append(f"{tag} provides {description}" + (f" for {subject}" if subject else "") + ".")
+            paired_audio = modality == "video_audio" and label == "Audio"
+            marker = entry.get("audio_retention_strategy" if paired_audio else "retention_strategy", "unspecified")
+            details = entry.get("audio_retention_details" if paired_audio else "retention_details", "").strip().rstrip(".")
+            if marker != "unspecified" or details:
+                retention.append(f"{tag}: " + (marker if marker != "unspecified" else "reference instructions") + (f" - {details}" if details else "") + ".")
+    return definitions, retention
+
+
+def build_prompt(entries, prompt, include_instructions):
+    if not include_instructions:
+        return prompt
+    definitions, retention = reference_instructions(entries)
+    sections = []
+    for heading, lines in (("Subject Definitions", definitions), ("Retention Analysis", retention)):
+        if not lines:
+            continue
+        # Reject competing hand-written sections; never silently duplicate definitions.
+        if re.search(r"^\s*\[" + heading + r"\]\s*$", prompt, re.IGNORECASE | re.MULTILINE):
+            raise ValueError(f"Prompt already contains [{heading}]. Remove that section or disable Include saved reference instructions.")
+        sections.append(f"[{heading}]\n" + "\n".join(lines))
+    return "\n\n".join(sections + ([prompt] if prompt else [])) if sections else prompt
 
 
 def kind(entry):
@@ -76,6 +143,13 @@ def validate(pack, allow_empty=False):
         raise ValueError("A RefMod must contain at least one reference source.")
     for entry in pack["entries"]:
         modality = kind(entry)
+        for field in INSTRUCTION_FIELDS:
+            if field in entry and not isinstance(entry[field], str):
+                raise ValueError(f"Reference instruction field {field} must be text.")
+        if entry.get("retention_strategy", "unspecified") not in (AUDIO_RETENTION if modality == "audio" else VISUAL_RETENTION):
+            raise ValueError("Invalid retention strategy for this reference modality.")
+        if entry.get("audio_retention_strategy", "unspecified") not in AUDIO_RETENTION:
+            raise ValueError("Invalid audio retention strategy.")
         if modality not in ("image", "video", "audio", "video_audio"):
             raise ValueError("Unknown reference kind.")
         if modality != "audio":
@@ -219,7 +293,10 @@ def describe(pack):
                      f"{size}{timing}strength {entry.get('strength', 1.0):g}; VAE: {entry.get('vae_label', 'unspecified')}")
         if entry.get("description"):
             lines.append(entry["description"])
-    lines.append("Descriptions are metadata; write subject definitions in your prompt. Zero-strength references are omitted.")
+    definitions, retention = reference_instructions(entries)
+    if definitions:
+        lines.extend(["Saved reference instructions (optional in Text Encode):", *definitions, *retention])
+    lines.append("Zero-strength references are omitted. Subject and reference numbers follow active source order.")
     return "\n".join(lines)
 
 
@@ -321,7 +398,7 @@ def save_pack(pack, directory, name, workflow=None, prompt=None):
     for i, entry in enumerate(pack["entries"]):
         for field in tensor_fields(entry):
             tensors[f"ref.{i}.{field}"] = entry[field].detach().cpu().contiguous().clone()
-        manifest.append({k: entry[k] for k in ("kind", "name", "description", "source_index", "vae_label", "audio_vae_label", "strength", "original_width", "original_height", "source_fps", "start_seconds", "duration_seconds", "frame_count", "timestamps") if k in entry})
+        manifest.append({k: entry[k] for k in ("kind", "name", "description", "source_index", "vae_label", "audio_vae_label", "strength", "original_width", "original_height", "source_fps", "start_seconds", "duration_seconds", "frame_count", "timestamps") + INSTRUCTION_FIELDS if k in entry})
     metadata = {"format": FORMAT, "version": str(VERSION), "manifest": json.dumps(manifest, ensure_ascii=False)}
     if workflow is not None:
         metadata["workflow"] = json.dumps(workflow, ensure_ascii=False)

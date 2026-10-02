@@ -20,6 +20,8 @@ function inputPlan(node, seen = new Set()) {
             strength: weights[input.name.split(".").at(-1)] ?? 1,
         })) };
     }
+    // Instruction editing changes metadata only; source selection IDs stay intact.
+    if (node.type === "H3RefModLabSetInstructions") return inputPlan(upstream("refmod"), next);
     if (node.type === "H3RefModLabSelectSources") return {
         type: "select", input: inputPlan(upstream("refmod"), next), selection: widget("selection"),
     };

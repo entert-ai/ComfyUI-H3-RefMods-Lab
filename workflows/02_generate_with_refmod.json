@@ -228,6 +228,12 @@
           "type": "STRING",
           "links": [],
           "slot_index": 1
+        },
+        {
+          "name": "final_prompt",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 2
         }
       ],
       "properties": {
@@ -235,7 +241,8 @@
       },
       "widgets_values": [
         "[Subject Definitions]\n<Subject 1> is the subject shown in <Picture 1>.\n\n[Retention Analysis]\nRetain the appearance of <Subject 1> from <Picture 1>.\n\n[Summary]\n<Subject 1> turns toward the camera and waves.\n\n[Visual Style]\nNatural lighting, a simple background, a steady medium shot.\n\n[Soundscape]\nQuiet room ambience.\n\n[Script]\n[Shot 1]\n<Subject 1> turns toward the camera and waves once.\n",
-        8192
+        8192,
+        false
       ]
     },
     {

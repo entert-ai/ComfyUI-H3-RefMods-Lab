@@ -75,7 +75,7 @@
       ],
       "size": [
         430,
-        460
+        710
       ],
       "flags": {},
       "order": 2,
@@ -118,7 +118,11 @@
         "minimax_h3_audio_vae_fp32.safetensors",
         0.0,
         3.0,
-        8192
+        8192,
+        "Alice",
+        "example-alice",
+        "reference",
+        "Use voice timbre, not the original dialogue."
       ]
     },
     {

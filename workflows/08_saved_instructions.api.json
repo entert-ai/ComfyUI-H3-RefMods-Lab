@@ -35,11 +35,11 @@
     "class_type": "H3RefModLabCombineV2",
     "inputs": {
       "refmods.refmod_1": [
-        "2",
+        "26",
         0
       ],
       "refmods.refmod_2": [
-        "4",
+        "27",
         0
       ],
       "strengths": "{\"refmod_1\": 1.0, \"refmod_2\": 1.0}"
@@ -82,9 +82,9 @@
         "5",
         0
       ],
-      "prompt": "[Subject Definitions]\n<Subject 1> is the subject shown in <Picture 1>.\n<Subject 2> is the subject shown in <Picture 2>.\n\n[Retention Analysis]\nRetain the appearance of <Subject 1> from <Picture 1>.\n\n[Summary]\n<Subject 1> and <Subject 2> stand side by side and wave.\n\n[Visual Style]\nNatural lighting, a simple background, a steady medium shot.\n\n[Soundscape]\nQuiet room ambience.\n\n[Script]\n[Shot 1]\n<Subject 1> stands on the left. <Subject 2> stands on the right. Both wave once.\n",
+      "prompt": "[Summary]\n<Subject 1> turns toward the camera and waves.\n\n[Visual Style]\nNatural lighting, a steady medium shot.\n\n[Soundscape]\nQuiet room ambience.\n\n[Script]\n[Shot 1]\n<Subject 1> turns toward the camera and waves once.",
       "max_tokens": 8192,
-      "include_saved_instructions": false
+      "include_saved_instructions": true
     }
   },
   "10": {
@@ -257,6 +257,38 @@
       "filename_prefix": "refmods_lab/h3",
       "format": "auto",
       "format.codec": "auto"
+    }
+  },
+  "26": {
+    "class_type": "H3RefModLabSetInstructions",
+    "inputs": {
+      "refmod": [
+        "2",
+        0
+      ],
+      "description": "a portrait",
+      "subject_name": "Alice",
+      "subject_key": "example-alice",
+      "retention_strategy": "partially_preserved",
+      "retention_details": "Preserve facial identity.",
+      "audio_retention_strategy": "unspecified",
+      "audio_retention_details": ""
+    }
+  },
+  "27": {
+    "class_type": "H3RefModLabSetInstructions",
+    "inputs": {
+      "refmod": [
+        "4",
+        0
+      ],
+      "description": "body shape",
+      "subject_name": "Alice",
+      "subject_key": "example-alice",
+      "retention_strategy": "partially_preserved",
+      "retention_details": "Preserve proportions; clothing may change.",
+      "audio_retention_strategy": "unspecified",
+      "audio_retention_details": ""
     }
   }
 }
