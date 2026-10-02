@@ -344,7 +344,41 @@ class RefModTests(unittest.TestCase):
             self.assertTrue(torch.equal(loaded["entries"][0]["latent"], original["entries"][0]["latent"]))
             self.assertTrue(torch.equal(loaded["entries"][0]["jpeg"], original["entries"][0]["jpeg"]))
             self.assertEqual(loaded["entries"][0]["description"], "reference description")
-            self.assertEqual(len(list(Path(directory).iterdir())), 2)
+            self.assertEqual(len(list(Path(directory).glob("*.safetensors"))), 2)
+
+    def test_file_numbers_shared_across_names_and_survive_deletion(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
+            one = core.save_pack(pack(), directory, "first")
+            two = core.save_pack(pack(), directory, "second")
+            self.assertEqual(one.name, "first_00001.safetensors")
+            self.assertEqual(two.name, "second_00002.safetensors")
+            one.unlink()
+            two.unlink()
+            self.assertEqual(core.save_pack(pack(), directory, "first").name, "first_00003.safetensors")
+
+    def test_file_numbers_seed_existing_folder_and_imports_and_expand(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
+            root = Path(directory)
+            (root / "old_name_00042.safetensors").touch()
+            self.assertEqual(core.save_pack(pack(), root, "new").name, "new_00043.safetensors")
+            (root / "imported_99999.safetensors").touch()
+            self.assertEqual(core.save_pack(pack(), root, "new").name, "new_100000.safetensors")
+
+    def test_concurrent_file_number_reservations_are_unique(self):
+        from concurrent.futures import ThreadPoolExecutor
+        with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
+            with ThreadPoolExecutor(max_workers=8) as executor:
+                numbers = list(executor.map(lambda _: core._next_file_number(Path(directory)), range(24)))
+            self.assertEqual(sorted(numbers), list(range(1, 25)))
+            self.assertEqual(core._next_file_number(Path(directory)), 25)
+
+    def test_failed_publication_does_not_reuse_number(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
+            with patch.object(core.os, "link", side_effect=OSError("Synthetic publication failure")):
+                with self.assertRaises(OSError):
+                    core.save_pack(pack(), directory, "test")
+            self.assertEqual(core.save_pack(pack(), directory, "test").name, "test_00002.safetensors")
+            self.assertEqual(list(Path(directory).glob(".refmod-*.tmp")), [])
 
     def test_foreign_format_and_bad_shape(self):
         with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:

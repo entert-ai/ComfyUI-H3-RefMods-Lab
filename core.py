@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 import re
 import tempfile
+import sqlite3
+from contextlib import closing
 
 import numpy as np
 from PIL import Image, ImageOps
@@ -285,6 +287,28 @@ def source_catalog(pack):
     return result
 
 
+def _next_file_number(directory):
+    """Reserve a durable, folder-wide ID before publishing the file.
+
+    SQLite serializes reservations across processes. A failed publication may
+    leave a gap, but an allocated ID is never reused while this database exists.
+    """
+    with closing(sqlite3.connect(str(directory / ".h3-refmods-counter.sqlite3"), timeout=30)) as connection:
+        with connection:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute("CREATE TABLE IF NOT EXISTS counter (id INTEGER PRIMARY KEY CHECK(id = 1), last INTEGER NOT NULL CHECK(last >= 0))")
+            row = connection.execute("SELECT last FROM counter WHERE id = 1").fetchone()
+            highest = row[0] if row else 0
+            # Seed older folders and account for manually imported higher IDs.
+            for path in directory.iterdir():
+                match = re.search(r"_(\d+)\.safetensors$", path.name, re.IGNORECASE)
+                if match and path.is_file():
+                    highest = max(highest, int(match.group(1)))
+            number = highest + 1
+            connection.execute("INSERT INTO counter (id, last) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET last = excluded.last", (number,))
+        return number
+
+
 def save_pack(pack, directory, name, workflow=None, prompt=None):
     validate(pack)
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,79}", name):
@@ -310,14 +334,14 @@ def save_pack(pack, directory, name, workflow=None, prompt=None):
                 header_size = int.from_bytes(handle.read(8), "little")
             if header_size + 8 > 4 * 1024 * 1024:
                 raise ValueError("Embedded workflow exceeds ComfyUI's 4 MiB metadata import limit. Reduce the graph or turn off Embed workflow.")
-        for counter in range(1, 100000):
+        while True:
+            counter = _next_file_number(directory)
             destination = directory / f"{name}_{counter:05d}.safetensors"
             try:
                 os.link(temporary, destination)
                 return destination
             except FileExistsError:
                 continue
-        raise ValueError("No unused numbered filename available.")
     finally:
         Path(temporary).unlink(missing_ok=True)
 
