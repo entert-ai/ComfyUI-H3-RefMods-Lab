@@ -22,10 +22,9 @@ if FOLDER not in folder_paths.folder_names_and_paths:
     folder_paths.folder_names_and_paths[FOLDER][1].add(".safetensors")
 
 
-def instruction_inputs(audio_only=False, paired=False):
-    fields = [
-        io.String.Input("subject_name", default="", optional=True, tooltip="Subject definition, e.g. Alice. Blank uses name. Describe the source's contribution in description."),
-        io.String.Input("subject_key", default="", optional=True, tooltip="Use the same key AND subject name across Create nodes to associate sources. Blank creates an independent identity; names alone never merge."),
+def instruction_inputs(audio_only=False, paired=False, include_subject=False):
+    fields = ([io.String.Input("subject_name", display_name="Subject name", default="Subject", optional=True,
+                tooltip="Same subject name groups sources automatically. Use distinct names for different subjects.")] if include_subject else []) + [
         io.Combo.Input("retention_strategy", options=list(core.AUDIO_RETENTION if audio_only else core.VISUAL_RETENTION), default="unspecified", optional=True),
         io.String.Input("retention_details", default="", multiline=True, optional=True, tooltip="What to preserve or change. Prompt guidance; does not alter latent strength.")]
     if paired:
@@ -40,15 +39,15 @@ class Create(io.ComfyNode):
         return io.Schema(node_id="H3RefModLabCreate", display_name="Create H3 RefMod", category=CATEGORY,
             description="Encode each input image independently. A batch is separate pictures, not a video. Uses the native H3 VAE; no training or diffusion model needed.",
             inputs=[io.Vae.Input("vae"), io.Image.Input("images"),
-                io.String.Input("name", default="subject"), io.String.Input("description", default="", multiline=True),
+                io.String.Input("subject_name", display_name="Subject name", default="Subject", tooltip="Same subject name groups sources automatically. Source labels are generated, e.g. Alice1, Alice2."), io.String.Input("description", default="", multiline=True),
                 io.String.Input("vae_label", default="H3 visual VAE (checkpoint unspecified)", tooltip="Record the selected VAE filename for reproducibility; this label does not select a model."),
                 io.Int.Input("max_edge", default=768, min=32, max=2048, step=32),
                 io.Int.Input("max_tokens", default=8192, min=0, max=1048576, tooltip="DiT reference-token budget; 0 disables. Excludes Qwen vision tokens.")] + instruction_inputs(),
             outputs=[REFMOD.Output(), io.String.Output(display_name="details")])
 
     @classmethod
-    def execute(cls, vae, images, name, description, vae_label, max_edge, max_tokens, subject_name="", subject_key="", retention_strategy="unspecified", retention_details=""):
-        instructions = core.instruction_metadata(name, subject_name, subject_key, retention_strategy, retention_details)
+    def execute(cls, vae, images, subject_name, description, vae_label, max_edge, max_tokens, retention_strategy="unspecified", retention_details=""):
+        instructions = core.instruction_metadata(subject_name, retention_strategy, retention_details)
         if not isinstance(vae.first_stage_model, MiniMaxH3VideoVAE):
             raise ValueError("Connect the full MiniMax H3 visual VAE, not an audio or tiny preview VAE.")
         if images.ndim != 4 or images.shape[-1] not in (3, 4) or images.shape[0] == 0:
@@ -66,7 +65,7 @@ class Create(io.ComfyNode):
             resized = comfy.utils.common_upscale(image[None, ..., :3].movedim(-1, 1), tw, th, "lanczos", "disabled").movedim(1, -1).clamp(0, 1)
             with torch.inference_mode():
                 z = vae.encode(resized).detach().cpu().contiguous()
-            entries.append({**instructions, "name": name, "description": description, "source_index": index + 1,
+            entries.append({**instructions, "name": f"{instructions['subject_name']}{index + 1}", "description": description, "source_index": index + 1,
                 "vae_label": vae_label, "original_width": w, "original_height": h,
                 "strength": 1.0, "latent": z, "jpeg": core.jpeg_tensor(resized)})
             progress.update(1)
@@ -116,7 +115,7 @@ class CreateVideo(io.ComfyNode):
             description="One IMAGE batch is one video. Samples at 24 fps, trims down to 5+17k frames, stores exact H3 latents and 2 fps JPEG frames for Qwen. Optional audio is the synchronized soundtrack of this same clip.",
             inputs=[io.Vae.Input("vae"), io.Image.Input("frames"),
                 io.Float.Input("source_fps", default=24, min=0.01, max=240, force_input=True),
-                io.String.Input("name", default="subject_video"), io.String.Input("description", default="", multiline=True),
+                io.String.Input("subject_name", display_name="Subject name", default="Subject", tooltip="Use the same name as the subject's image/audio sources."), io.String.Input("description", default="", multiline=True),
                 io.String.Input("vae_label", default="H3 visual VAE (checkpoint unspecified)"),
                 io.Float.Input("start_seconds", default=0, min=0, max=86400, step=0.01),
                 io.Float.Input("duration_seconds", default=3, min=0.21, max=15, step=0.01),
@@ -127,10 +126,10 @@ class CreateVideo(io.ComfyNode):
             outputs=[REFMOD.Output(), io.String.Output(display_name="details")])
 
     @classmethod
-    def execute(cls, vae, frames, source_fps, name, description, vae_label, start_seconds,
+    def execute(cls, vae, frames, source_fps, subject_name, description, vae_label, start_seconds,
                 duration_seconds, max_edge, max_tokens, audio=None, audio_vae=None,
-                audio_vae_label="H3 audio VAE (checkpoint unspecified)", subject_name="", subject_key="", retention_strategy="unspecified", retention_details="", audio_retention_strategy="unspecified", audio_retention_details=""):
-        instructions = core.instruction_metadata(name, subject_name, subject_key, retention_strategy, retention_details, audio_retention_strategy, audio_retention_details)
+                audio_vae_label="H3 audio VAE (checkpoint unspecified)", retention_strategy="unspecified", retention_details="", audio_retention_strategy="unspecified", audio_retention_details=""):
+        instructions = core.instruction_metadata(subject_name, retention_strategy, retention_details, audio_retention_strategy, audio_retention_details)
         clip_controls(start_seconds, duration_seconds)
         if not isinstance(vae.first_stage_model, MiniMaxH3VideoVAE):
             raise ValueError("Connect the full MiniMax H3 visual VAE.")
@@ -166,7 +165,7 @@ class CreateVideo(io.ComfyNode):
             z = vae.encode(resized).detach().cpu().contiguous()
         sampled = resized[::12]
         jpeg, offsets = core.video_presentation(sampled)
-        entry = {**instructions, "kind": "video", "name": name, "description": description, "source_index": 1,
+        entry = {**instructions, "kind": "video", "name": f"{instructions['subject_name']}1", "description": description, "source_index": 1,
             "vae_label": vae_label, "original_width": w, "original_height": h,
             "source_fps": source_fps, "start_seconds": start_seconds, "duration_seconds": duration,
             "frame_count": count, "strength": 1.0, "latent": z, "jpeg": core.jpeg_tensor(resized[:1]),
@@ -186,7 +185,7 @@ class CreateAudio(io.ComfyNode):
         return io.Schema(node_id="H3RefModLabCreateAudio", display_name="Create H3 Audio RefMod", category=CATEGORY,
             description="Encode one standalone voice/sound reference with H3's audio VAE. Mono is duplicated to stereo; native encoding resamples to 32 kHz. Raw audio is not stored; Qwen sees an Audio label.",
             inputs=[io.Vae.Input("audio_vae"), io.Audio.Input("audio"),
-                io.String.Input("name", default="subject_voice"), io.String.Input("description", default="", multiline=True),
+                io.String.Input("subject_name", display_name="Subject name", default="Subject", tooltip="Use the same name as the subject's visual sources."), io.String.Input("description", default="", multiline=True),
                 io.String.Input("vae_label", default="H3 audio VAE (checkpoint unspecified)"),
                 io.Float.Input("start_seconds", default=0, min=0, max=86400, step=0.01),
                 io.Float.Input("duration_seconds", default=3, min=0.21, max=15, step=0.01),
@@ -194,8 +193,8 @@ class CreateAudio(io.ComfyNode):
             outputs=[REFMOD.Output(), io.String.Output(display_name="details")])
 
     @classmethod
-    def execute(cls, audio_vae, audio, name, description, vae_label, start_seconds, duration_seconds, max_tokens, subject_name="", subject_key="", retention_strategy="unspecified", retention_details=""):
-        instructions = core.instruction_metadata(name, subject_name, subject_key, retention_strategy, retention_details, audio_only=True)
+    def execute(cls, audio_vae, audio, subject_name, description, vae_label, start_seconds, duration_seconds, max_tokens, retention_strategy="unspecified", retention_details=""):
+        instructions = core.instruction_metadata(subject_name, retention_strategy, retention_details, audio_only=True)
         clip_controls(start_seconds, duration_seconds)
         if not isinstance(audio_vae.first_stage_model, MiniMaxH3AudioVAE):
             raise ValueError("Connect the MiniMax H3 audio VAE.")
@@ -220,7 +219,7 @@ class CreateAudio(io.ComfyNode):
             draw.line((x, 128 - peak, x, 128 + peak), fill=(100, 190, 230))
         draw.text((12, 12), f"AUDIO / {duration:.2f}s", fill=(240, 240, 240))
         thumbnail = torch.from_numpy(np.array(tile, copy=True)).float().div(255)[None]
-        pack = {"entries": [{**instructions, "kind": "audio", "name": name, "description": description,
+        pack = {"entries": [{**instructions, "kind": "audio", "name": f"{instructions['subject_name']}1", "description": description,
             "source_index": 1, "vae_label": vae_label, "strength": 1.0,
             "start_seconds": start_seconds, "duration_seconds": duration,
             "audio_latent": z, "jpeg": core.jpeg_tensor(thumbnail)}]}
@@ -340,21 +339,12 @@ class SetInstructions(io.ComfyNode):
         return io.Schema(node_id="H3RefModLabSetInstructions", display_name="Set H3 RefMod Instructions", category=CATEGORY,
             description="Set one subject's prompt metadata on every source in the incoming pack without re-encoding. Use Select Sources first for a subset. Save the output to persist changes. For standalone audio, use audio_retention_strategy/details.",
             inputs=[REFMOD.Input("refmod"), io.String.Input("description", default="", multiline=True,
-                    tooltip="What these sources provide, e.g. a portrait. Empty clears the description.")] + instruction_inputs(paired=True),
+                    tooltip="What these sources provide, e.g. a portrait. Empty clears the description.")] + instruction_inputs(paired=True, include_subject=True),
             outputs=[REFMOD.Output(), io.String.Output(display_name="details")])
 
     @classmethod
-    def execute(cls, refmod, description, subject_name="", subject_key="", retention_strategy="unspecified", retention_details="", audio_retention_strategy="unspecified", audio_retention_details=""):
-        core.validate(refmod)
-        metadata = core.instruction_metadata(refmod["entries"][0]["name"], subject_name, subject_key, retention_strategy, retention_details, audio_retention_strategy, audio_retention_details)
-        entries = []
-        for entry in refmod["entries"]:
-            instructions = dict(metadata)
-            if core.kind(entry) == "audio":
-                instructions.update(retention_strategy=audio_retention_strategy, retention_details=audio_retention_details)
-            entries.append(dict(entry, **instructions, description=description))
-        pack = {"entries": entries}
-        core.validate(pack)
+    def execute(cls, refmod, description, subject_name="Subject", retention_strategy="unspecified", retention_details="", audio_retention_strategy="unspecified", audio_retention_details=""):
+        pack = core.set_instructions(refmod, description, subject_name, retention_strategy, retention_details, audio_retention_strategy, audio_retention_details)
         return io.NodeOutput(pack, core.describe(pack))
 
 

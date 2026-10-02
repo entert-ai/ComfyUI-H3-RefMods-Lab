@@ -75,7 +75,7 @@ placeholder filenames deliberately contain no personal content.
    the whole combined set.
 
 8. **08_saved_instructions.json** — two packs supplying Alice's portrait and body shape.
-   Set Instructions attaches matching subject keys and separate retention details;
+   Set Instructions attaches matching subject names and separate retention details;
    Text Encode builds the reference instructions. Save the edited packs to persist them.
 
 The generation workflows use installed H3 Ref2VA INT8 weights, H3 Qwen3-VL NVFP4,
@@ -110,11 +110,17 @@ images Qwen has not seen.
 **Combine node update:** Replace existing Combine nodes and reconnect their packs in older workflows. The inputs are now `refmod_1` through `refmod_100`, with matching 0–2 strength sliders. Existing saved RefMod files remain compatible. Updated example workflows use the new layout. API inputs use `refmods.refmod_1`, etc., and a `strengths` JSON object such as `{"refmod_1":1,"refmod_2":0.5}`.
 
 Saved instructions are optional metadata, carried by each source inside the `.safetensors`
-file. All Create nodes expose `subject_name` (blank uses `name`), `subject_key`,
-`retention_strategy`, and `retention_details`. A Create batch shares one subject.
-Use a separate Create branch for each contribution/description. A blank key generates
-an independent subject ID; the same explicit key and name deliberately joins sources
-created in different branches. Names alone never merge. Keys are case sensitive.
+file. All Create nodes have one **Subject name** field, plus the source description
+and retention controls. Sources with the same subject name group automatically,
+ignoring capitalization and extra spaces. Use different names for different subjects,
+e.g. Alice Smith and Alice Jones. A Create batch shares one subject; use separate
+branches for different descriptions. Source labels such as Alice1 and Alice2 are
+assigned automatically in pack order. They are display labels, not filenames or
+reference tokens, and may renumber after selection/reordering. Internal selection
+IDs remain unchanged. Save's filename field still controls the output filename.
+Older saved packs remain readable; subject metadata is grouped by name even if
+it contains former grouping keys. Old canvas node fields migrate when loaded. API callers should use `subject_name`;
+the former `name` and `subject_key` inputs have been removed.
 
 Enable **include_saved_instructions** in Text Encode to prepend `[Subject Definitions]`
 and `[Retention Analysis]` to your scene prompt. It is off by default for existing

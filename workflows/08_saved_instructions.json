@@ -985,7 +985,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "Two sources supply one subject: portrait and body shape. Shared subject key example-alice groups both as Alice. Text Encode generates definitions and retention using the active source labels. Its final_prompt output is the exact prompt sent to H3. Select Sources first to annotate only a subset. Save each instruction node output if you want to persist metadata."
+        "Two sources supply one subject: portrait and body shape. The Subject name Alice groups both sources automatically. Text Encode generates definitions and retention using the active source labels. Its final_prompt output is the exact prompt sent to H3. Select Sources first to annotate only a subset. Save each instruction node output if you want to persist metadata."
       ]
     },
     {
@@ -1031,7 +1031,6 @@
       "widgets_values": [
         "a portrait",
         "Alice",
-        "example-alice",
         "partially_preserved",
         "Preserve facial identity.",
         "unspecified",
@@ -1081,7 +1080,6 @@
       "widgets_values": [
         "body shape",
         "Alice",
-        "example-alice",
         "partially_preserved",
         "Preserve proportions; clothing may change.",
         "unspecified",

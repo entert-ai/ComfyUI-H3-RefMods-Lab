@@ -57,12 +57,12 @@ def audio_pack():
 
 class RefModTests(unittest.TestCase):
     def test_saved_instructions_roundtrip_and_subject_identity(self):
-        a = nodes.SetInstructions.execute(pack("Alice"), "a portrait", subject_key="alice", retention_strategy="partially_preserved", retention_details="Keep facial identity; allow new clothing").result[0]
-        b = nodes.SetInstructions.execute(pack("Alice"), "her body shape", subject_key="alice", retention_strategy="fully_preserved").result[0]
-        c = nodes.SetInstructions.execute(pack("Alice"), "a different person").result[0]
+        a = nodes.SetInstructions.execute(pack("Alice"), "a portrait", subject_name="Alice", retention_strategy="partially_preserved", retention_details="Keep facial identity; allow new clothing").result[0]
+        b = nodes.SetInstructions.execute(pack("Alice"), "her body shape", subject_name="Alice", retention_strategy="fully_preserved").result[0]
+        c = nodes.SetInstructions.execute(pack("Alice"), "a different person", subject_name="Alice Jones").result[0]
         combined = core.combine_many([(a, 1), (b, 1), (c, 1)])
         definitions, retention = core.reference_instructions(combined["entries"])
-        self.assertEqual(definitions, ["<Subject 1> is Alice.", "<Picture 1> provides a portrait for <Subject 1>.", "<Picture 2> provides her body shape for <Subject 1>.", "<Subject 2> is Alice.", "<Picture 3> provides a different person for <Subject 2>."])
+        self.assertEqual(definitions, ["<Subject 1> is Alice.", "<Picture 1> provides a portrait for <Subject 1>.", "<Picture 2> provides her body shape for <Subject 1>.", "<Subject 2> is Alice Jones.", "<Picture 3> provides a different person for <Subject 2>."])
         self.assertIn("<Picture 1>: partially_preserved - Keep facial identity; allow new clothing.", retention)
         with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
             restored = core.load_pack(core.save_pack(combined, directory, "instructions"))
@@ -79,8 +79,8 @@ class RefModTests(unittest.TestCase):
         self.assertIn("<Picture 1> provides a visual reference for <Subject 1>.", core.reference_instructions(empty_description["entries"])[0])
 
     def test_instruction_selection_renumbering_and_conflicts(self):
-        a = nodes.SetInstructions.execute(pack("Alice"), "a portrait", subject_key="a").result[0]
-        b = nodes.SetInstructions.execute(pack("Bob"), "a portrait", subject_key="b").result[0]
+        a = nodes.SetInstructions.execute(pack("Alice"), "a portrait", subject_name="Alice").result[0]
+        b = nodes.SetInstructions.execute(pack("Bob"), "a portrait", subject_name="Bob").result[0]
         combined = core.combine_many([(a, 0), (b, 1)])
         definitions, _ = core.reference_instructions(combined["entries"])
         self.assertEqual(definitions, ["<Subject 1> is Bob.", "<Picture 1> provides a portrait for <Subject 1>."])
@@ -88,15 +88,14 @@ class RefModTests(unittest.TestCase):
         selected = core.select_sources(combined, json.dumps([core.source_ids(combined)[1]]))
         self.assertEqual(core.reference_instructions(selected["entries"])[0], definitions)
         conflict = dict(a["entries"][0], subject_name="Bob")
-        with self.assertRaisesRegex(ValueError, "different subject names"):
-            core.reference_instructions(a["entries"] + [conflict])
+        self.assertIn("<Subject 2> is Bob.", core.reference_instructions(a["entries"] + [conflict])[0])
         for marker in ("fully_copy", "invalid"):
             with self.assertRaises(ValueError):
                 core.instruction_metadata("Alice", retention_strategy=marker)
 
     def test_instruction_audio_and_video_labels(self):
-        paired = nodes.SetInstructions.execute(video_pack(True), "walking motion", subject_name="Alice", subject_key="a", retention_strategy="attribute_transfer", audio_retention_strategy="reference", audio_retention_details="Voice timbre only").result[0]
-        voice = nodes.SetInstructions.execute(audio_pack(), "a voice", subject_name="Alice", subject_key="a", audio_retention_strategy="weak_reference").result[0]
+        paired = nodes.SetInstructions.execute(video_pack(True), "walking motion", subject_name="Alice", retention_strategy="attribute_transfer", audio_retention_strategy="reference", audio_retention_details="Voice timbre only").result[0]
+        voice = nodes.SetInstructions.execute(audio_pack(), "a voice", subject_name="Alice", audio_retention_strategy="weak_reference").result[0]
         result = core.combine_many([(voice, 1), (paired, 1)])
         definitions, retention = core.reference_instructions(result["entries"])
         self.assertIn("<Audio 1> provides a voice for <Subject 1>.", definitions)
@@ -114,7 +113,7 @@ class RefModTests(unittest.TestCase):
             def encode_from_tokens_scheduled(self, tokens):
                 return [[torch.zeros(1), {}]]
         clip = Clip()
-        refs = nodes.SetInstructions.execute(pack("Alice"), "a portrait", retention_strategy="fully_preserved").result[0]
+        refs = nodes.SetInstructions.execute(pack("Alice"), "a portrait", subject_name="Alice", retention_strategy="fully_preserved").result[0]
         body = "[Summary]\n<Subject 1> waves."
         result = nodes.TextEncode.execute(clip, refs, body, 8192, True).result
         self.assertEqual(result[2], clip.prompt)
@@ -129,6 +128,39 @@ class RefModTests(unittest.TestCase):
         legacy = pack()
         self.assertNotIn("<Subject", core.build_prompt(legacy["entries"], body.replace("<Subject 1>", "The person"), True))
         self.assertEqual(core.build_prompt([], body, True), body)
+
+    def test_one_subject_field_and_automatic_labels(self):
+        a = nodes.SetInstructions.execute(pack("old-label"), "portrait", subject_name="Alice").result[0]
+        b = nodes.SetInstructions.execute(audio_pack(), "voice", subject_name="  alice  ").result[0]
+        c = nodes.SetInstructions.execute(video_pack(), "motion", subject_name="Alice Jones").result[0]
+        combined = core.combine_many([(a, 1), (b, 1), (c, 1)])
+        definitions, _ = core.reference_instructions(combined["entries"])
+        self.assertEqual(sum(line.startswith("<Subject ") for line in definitions), 2)
+        self.assertEqual(core.source_labels(combined["entries"]), ["Alice1", "Alice2", "Alice Jones1"])
+        self.assertEqual(a["entries"][0]["subject_id"], b["entries"][0]["subject_id"])
+        self.assertEqual(core.source_ids(a), core.source_ids(pack("old-label")))
+        self.assertTrue(core.source_catalog(combined)[1]["label"].startswith("Alice2 / audio"))
+        for cls in (nodes.Create, nodes.CreateVideo, nodes.CreateAudio, nodes.SetInstructions):
+            inputs = cls.INPUT_TYPES()
+            names = set(inputs.get("required", {})) | set(inputs.get("optional", {}))
+            self.assertIn("subject_name", names)
+            self.assertNotIn("name", names)
+            self.assertNotIn("subject_key", names)
+        with self.assertRaisesRegex(ValueError, "Subject name"):
+            core.instruction_metadata("  ")
+        # Old saved IDs remain readable but names now control grouping.
+        old = dict(a["entries"][0], subject_id="auto:legacy-other-id")
+        self.assertEqual(sum(line.startswith("<Subject ") for line in core.reference_instructions(a["entries"] + [old])[0]), 1)
+
+    def test_preview_instruction_labels_match_execution(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
+            saved = core.save_pack(pack("old-label"), directory, "legacy")
+            with patch.dict(nodes.folder_paths.folder_names_and_paths, {nodes.FOLDER: ([directory], {".safetensors"})}), patch.dict(nodes.folder_paths.filename_list_cache, {}, clear=True):
+                plan = {"type": "instructions", "input": {"type": "load", "filename": saved.name}, "description": "portrait", "subject_name": "Alice"}
+                result = picker_routes.resolve_plan(plan)
+                expected = nodes.SetInstructions.execute(core.load_pack(saved), "portrait", "Alice").result[0]
+                self.assertEqual(core.source_catalog(result), core.source_catalog(expected))
+                self.assertEqual(core.source_ids(result), core.source_ids(core.load_pack(saved)))
 
     def test_uniform_combine_order_and_strength(self):
         original = pack()
@@ -258,7 +290,7 @@ class RefModTests(unittest.TestCase):
         vae, audio_vae = Visual(), Audio()
         frames = torch.arange(90).float().view(-1, 1, 1, 1).expand(-1, 64, 96, 3) / 100
         audio = {"waveform": torch.zeros(1, 1, 96000), "sample_rate": 32000}
-        kwargs = dict(vae=vae, frames=frames, source_fps=30, name="clip", description="", vae_label="test",
+        kwargs = dict(vae=vae, frames=frames, source_fps=30, subject_name="clip", description="", vae_label="test",
             start_seconds=0.5, duration_seconds=1, max_edge=768, max_tokens=8192, audio=audio, audio_vae=audio_vae)
         created = nodes.CreateVideo.execute(**kwargs).result[0]
         entry = created["entries"][0]

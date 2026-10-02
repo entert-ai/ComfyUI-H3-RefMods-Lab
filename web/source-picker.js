@@ -20,8 +20,10 @@ function inputPlan(node, seen = new Set()) {
             strength: weights[input.name.split(".").at(-1)] ?? 1,
         })) };
     }
-    // Instruction editing changes metadata only; source selection IDs stay intact.
-    if (node.type === "H3RefModLabSetInstructions") return inputPlan(upstream("refmod"), next);
+    if (node.type === "H3RefModLabSetInstructions") return {
+        type: "instructions", input: inputPlan(upstream("refmod"), next),
+        ...Object.fromEntries(["description", "subject_name", "retention_strategy", "retention_details", "audio_retention_strategy", "audio_retention_details"].map((name) => [name, widget(name)])),
+    };
     if (node.type === "H3RefModLabSelectSources") return {
         type: "select", input: inputPlan(upstream("refmod"), next), selection: widget("selection"),
     };

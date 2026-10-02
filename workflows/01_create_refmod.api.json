@@ -22,13 +22,11 @@
         "1",
         0
       ],
-      "name": "subject",
       "description": "Describe what this reference shows.",
       "vae_label": "minimax_h3_video_vae_fp16.safetensors",
       "max_edge": 768,
       "max_tokens": 8192,
       "subject_name": "Alice",
-      "subject_key": "example-alice",
       "retention_strategy": "partially_preserved",
       "retention_details": "Keep identity; allow changes to clothing and background."
     }

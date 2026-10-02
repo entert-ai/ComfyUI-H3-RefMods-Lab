@@ -119,13 +119,11 @@
         "Node name for S&R": "H3RefModLabCreate"
       },
       "widgets_values": [
-        "subject",
+        "Alice",
         "Describe what this reference shows.",
         "minimax_h3_video_vae_fp16.safetensors",
         768,
         8192,
-        "Alice",
-        "example-alice",
         "partially_preserved",
         "Keep identity; allow changes to clothing and background."
       ]

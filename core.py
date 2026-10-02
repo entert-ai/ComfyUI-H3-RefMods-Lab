@@ -10,7 +10,6 @@ from pathlib import Path
 import re
 import tempfile
 import sqlite3
-import uuid
 from contextlib import closing
 
 import numpy as np
@@ -26,15 +25,49 @@ AUDIO_RETENTION = ("unspecified", "fully_copy", "partially_copy", "reference", "
 INSTRUCTION_FIELDS = ("subject_id", "subject_name", "retention_strategy", "retention_details", "audio_retention_strategy", "audio_retention_details")
 
 
-def instruction_metadata(name, subject_name="", subject_key="", retention_strategy="unspecified", retention_details="", audio_retention_strategy="unspecified", audio_retention_details="", audio_only=False):
-    """A supplied key deliberately joins sources; display names never do."""
+def normalized_subject_name(name):
+    return " ".join(name.split()).casefold()
+
+
+def instruction_metadata(subject_name, retention_strategy="unspecified", retention_details="", audio_retention_strategy="unspecified", audio_retention_details="", audio_only=False):
+    """Subject names group sources automatically; IDs stay internal."""
+    subject_name = " ".join(subject_name.split())
+    if not subject_name:
+        raise ValueError("Enter a Subject name. Use distinct names for different subjects.")
     if retention_strategy not in (AUDIO_RETENTION if audio_only else VISUAL_RETENTION) or audio_retention_strategy not in AUDIO_RETENTION:
         raise ValueError("Invalid retention strategy for this reference modality.")
-    key = subject_key.strip()
-    return {"subject_id": "key:" + hashlib.sha256(key.encode()).hexdigest() if key else "auto:" + str(uuid.uuid4()),
-            "subject_name": subject_name.strip() or name.strip(),
+    return {"subject_id": "name:" + hashlib.sha256(normalized_subject_name(subject_name).encode()).hexdigest(),
+            "subject_name": subject_name,
             "retention_strategy": retention_strategy, "retention_details": retention_details.strip(),
             "audio_retention_strategy": audio_retention_strategy, "audio_retention_details": audio_retention_details.strip()}
+
+
+def set_instructions(pack, description, subject_name="Subject", retention_strategy="unspecified", retention_details="", audio_retention_strategy="unspecified", audio_retention_details=""):
+    validate(pack)
+    metadata = instruction_metadata(subject_name, retention_strategy, retention_details, audio_retention_strategy, audio_retention_details)
+    entries = []
+    for entry in pack["entries"]:
+        instructions = dict(metadata)
+        if kind(entry) == "audio":
+            instructions.update(retention_strategy=audio_retention_strategy, retention_details=audio_retention_details)
+        entries.append(dict(entry, **instructions, description=description))
+    result = {"entries": entries}
+    validate(result)
+    return result
+
+
+def source_labels(entries):
+    counts, labels = {}, []
+    for entry in entries:
+        name = entry.get("subject_name", "").strip()
+        if not name:
+            labels.append(entry["name"])
+            continue
+        key = normalized_subject_name(name)
+        count, display_name = counts.get(key, (0, name))
+        counts[key] = (count + 1, display_name)
+        labels.append(f"{display_name}{count + 1}")
+    return labels
 
 
 def reference_instructions(entries):
@@ -44,11 +77,10 @@ def reference_instructions(entries):
     for entry in entries:
         if entry.get("strength", 1) <= 0:
             continue
-        subject_id, subject_name = entry.get("subject_id"), entry.get("subject_name", "")
+        subject_name = entry.get("subject_name", "").strip()
+        subject_id = normalized_subject_name(subject_name) if subject_name else None
         subject = None
         if subject_id and subject_name:
-            if subject_id in subjects and subjects[subject_id][1] != subject_name:
-                raise ValueError("Sources sharing a subject key have different subject names. Use the same name or separate keys.")
             if subject_id not in subjects:
                 subjects[subject_id] = (len(subjects) + 1, subject_name)
                 definitions.append(f"<Subject {len(subjects)}> is {subject_name.rstrip('.')}.")
@@ -277,7 +309,7 @@ def describe(pack):
     entries = active_entries(pack)
     lines = [f"{len(entries)} active sources; {token_count(entries):,} DiT reference tokens (excludes text/vision tokens)."]
     counters = {"Picture": 0, "Video": 0, "Audio": 0}
-    for entry in entries:
+    for entry, source_label in zip(entries, source_labels(entries)):
         modality = kind(entry)
         labels = ["Picture"] if modality == "image" else (["Audio", "Video"] if modality == "video_audio" else ["Audio" if modality == "audio" else "Video"])
         tags = []
@@ -289,7 +321,7 @@ def describe(pack):
             z = entry["latent"]
             size = f"{z.shape[4] * 16}×{z.shape[3] * 16}; "
         timing = f"{entry['duration_seconds']:.3f}s; " if "duration_seconds" in entry else ""
-        lines.append(f"{' + '.join(tags)} = {entry['name']} [{entry.get('source_index', 1)}]; {modality}; "
+        lines.append(f"{' + '.join(tags)} = {source_label} [{entry.get('source_index', 1)}]; {modality}; "
                      f"{size}{timing}strength {entry.get('strength', 1.0):g}; VAE: {entry.get('vae_label', 'unspecified')}")
         if entry.get("description"):
             lines.append(entry["description"])
@@ -352,13 +384,13 @@ def select_sources(pack, selection):
 
 def source_catalog(pack):
     result = []
-    for identifier, entry in zip(source_ids(pack), pack["entries"]):
+    for identifier, entry, source_label in zip(source_ids(pack), pack["entries"], source_labels(pack["entries"])):
         with Image.open(io.BytesIO(entry["jpeg"].cpu().numpy().tobytes())) as image:
             image = ImageOps.pad(image.convert("RGB"), (192, 192), color=(32, 32, 32))
             buffer = io.BytesIO()
             image.save(buffer, format="JPEG", quality=85)
         timing = f" / {entry['duration_seconds']:.2f}s" if "duration_seconds" in entry else ""
-        result.append({"source_id": identifier, "label": f"{entry['name']} / {kind(entry)} / source {entry.get('source_index', 1)}{timing}",
+        result.append({"source_id": identifier, "label": f"{source_label} / {kind(entry)} / source {entry.get('source_index', 1)}{timing}",
             "tokens": token_count([entry]), "strength": entry.get("strength", 1.0),
             "thumbnail": "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")})
     return result

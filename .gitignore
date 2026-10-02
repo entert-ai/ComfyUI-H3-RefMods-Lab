@@ -34,3 +34,6 @@
 
 !workflows/08_saved_instructions.json
 !workflows/08_saved_instructions.api.json
+
+!web/subject-fields.js
+!tests/test_subject_fields.mjs

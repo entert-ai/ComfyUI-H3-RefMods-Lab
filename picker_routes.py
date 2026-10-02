@@ -25,6 +25,9 @@ def resolve_plan(plan, depth=0):
             return core.combine_many([(resolve_plan(item["input"], depth + 1), item.get("strength", 1)) for item in inputs])
         return core.combine(resolve_plan(plan["a"], depth + 1), resolve_plan(plan["b"], depth + 1),
                             float(plan["strength_a"]), float(plan["strength_b"]))
+    if kind == "instructions":
+        fields = {name: plan[name] for name in ("description", "subject_name", "retention_strategy", "retention_details", "audio_retention_strategy", "audio_retention_details") if name in plan}
+        return core.set_instructions(resolve_plan(plan["input"], depth + 1), **fields)
     if kind == "select":
         return core.select_sources(resolve_plan(plan["input"], depth + 1), plan["selection"])
     raise ValueError("Refresh sources supports connected Load, Combine and Select Sources nodes. Save an in-memory pack first, or queue this selector alone to preview it.")

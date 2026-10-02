@@ -224,7 +224,7 @@
         "Node name for S&R": "H3RefModLabCreateVideo"
       },
       "widgets_values": [
-        "subject_motion_voice",
+        "Alice",
         "Describe the appearance, motion and voice this reference should supply.",
         "minimax_h3_video_vae_fp16.safetensors",
         0.0,
@@ -232,8 +232,6 @@
         512,
         8192,
         "minimax_h3_audio_vae_fp32.safetensors",
-        "Alice",
-        "example-alice",
         "partially_preserved",
         "Keep identity; allow changes to clothing and background.",
         "reference",
