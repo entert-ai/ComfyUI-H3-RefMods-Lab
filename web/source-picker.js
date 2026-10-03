@@ -40,6 +40,7 @@ export function makePicker(node, selection, refresh) {
     const grid = document.createElement("div");
     grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px";
     let sources = [];
+    let catalogReady = false;
     const changed = () => { node.graph?.change(); node.setDirtyCanvas?.(true, true); };
     const chosen = () => selection.value === "all" ? new Set(sources.map((s) => s.source_id)) : new Set(JSON.parse(selection.value));
     const updateStatus = () => {
@@ -49,12 +50,13 @@ export function makePicker(node, selection, refresh) {
             const active = included.filter((source) => source.strength > 0);
             const tokens = active.reduce((total, source) => total + source.tokens, 0);
             const missing = [...selected].filter((id) => !sources.some((source) => source.source_id === id));
-            status.textContent = `${included.length}/${sources.length} selected · ${tokens.toLocaleString()} active DiT tokens\nPicture / Video / Audio numbers change after selection; check Inspect after Combine.${missing.length ? "\nSaved sources are missing. Select again before generating." : ""}`;
+            status.textContent = `${included.length}/${sources.length} selected · ${tokens.toLocaleString()} active DiT tokens\nPicture / Video / Audio numbers change after selection; check Inspect after Combine.${missing.length ? "\nUpstream sources changed. Downstream outputs are paused until you choose sources again, Keep available selection, or Select all, then run again." : ""}`;
         } catch {
             status.textContent = "Invalid saved selection. Choose Select all or Clear all to reset.";
         }
     };
     const render = () => {
+        keepAvailable.disabled = !catalogReady;
         grid.replaceChildren();
         let selected;
         try { selected = chosen(); } catch { selected = new Set(); }
@@ -94,15 +96,20 @@ export function makePicker(node, selection, refresh) {
     const refreshButton = button("Refresh sources", async () => {
         refreshButton.disabled = true;
         status.textContent = "Loading source thumbnails…";
-        try { sources = await refresh(); render(); }
+        try { sources = await refresh(); catalogReady = true; render(); }
         catch (error) { status.textContent = error.message; grid.replaceChildren(); }
         finally { refreshButton.disabled = false; }
     });
     button("Select all", () => { selection.value = "all"; render(); changed(); });
     button("Clear all", () => { selection.value = "[]"; render(); changed(); });
+    const keepAvailable = button("Keep available selection", () => {
+        try { const selected = chosen(); selection.value = JSON.stringify(sources.filter((source) => selected.has(source.source_id)).map((source) => source.source_id)); render(); changed(); }
+        catch { status.textContent = "Invalid saved selection. Choose Select all or Clear all to reset."; }
+    });
+    keepAvailable.disabled = true;
     root.append(controls, status, grid);
     status.textContent = "Connect Load RefMod and click Refresh sources. All sources start enabled.";
-    return { root, setSources(value) { sources = value; render(); }, reset() { sources = []; grid.replaceChildren(); status.textContent = "Input changed. Click Refresh sources before generating."; } };
+    return { root, setSources(value) { sources = value; catalogReady = true; render(); }, reset() { sources = []; catalogReady = false; keepAvailable.disabled = true; grid.replaceChildren(); status.textContent = "Input changed. Click Refresh sources before generating."; } };
 }
 
 app.registerExtension({

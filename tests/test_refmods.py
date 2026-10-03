@@ -366,6 +366,28 @@ class RefModTests(unittest.TestCase):
             loaded["entries"][0]["strength"] = 0.5
             self.assertEqual(core.source_ids(original), core.source_ids(loaded))
 
+    def test_stale_selector_publishes_current_sources_and_blocks_outputs(self):
+        from comfy_execution.graph_utils import ExecutionBlocker
+        original = pack("old")
+        replacement = pack("new")
+        saved_selection = json.dumps(core.source_ids(original))
+        result = nodes.SelectSources.execute(replacement, saved_selection)
+        self.assertTrue(all(isinstance(value, ExecutionBlocker) for value in result.result))
+        self.assertEqual(result.ui["sources"], core.source_catalog(replacement))
+        self.assertIn("Upstream sources changed", result.ui["text"][0])
+        recovered = nodes.SelectSources.execute(replacement, "all")
+        self.assertEqual(len(recovered.result[0]["entries"]), 1)
+        recovered = nodes.SelectSources.execute(replacement, json.dumps(core.source_ids(replacement)))
+        self.assertEqual(core.source_ids(recovered.result[0]), core.source_ids(replacement))
+        # Partial overlap still requires explicit confirmation, not an implicit fallback.
+        combined = core.combine_many([(original, 1), (replacement, 1)])
+        stale = json.dumps(core.source_ids(original) + ["missing"])
+        blocked = nodes.SelectSources.execute(combined, stale)
+        self.assertIsInstance(blocked.result[0], ExecutionBlocker)
+        for selection in ("invalid", "{}", "[1]"):
+            with self.assertRaises(ValueError):
+                nodes.SelectSources.execute(replacement, selection)
+
     def test_selection_stale_and_invalid(self):
         for selection in ('["missing"]', 'invalid', '{}', '[1]'):
             with self.assertRaises(ValueError):

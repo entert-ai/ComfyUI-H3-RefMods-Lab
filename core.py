@@ -361,6 +361,10 @@ def source_ids(pack):
     return result
 
 
+class StaleSourceSelectionError(ValueError):
+    """An explicit selection no longer matches the upstream pack."""
+
+
 def selected_ids(pack, selection):
     ids = source_ids(pack)
     if selection == "all":
@@ -373,7 +377,7 @@ def selected_ids(pack, selection):
         raise ValueError("Source selection must be 'all' or a JSON list of source IDs.")
     missing = set(chosen) - set(ids)
     if missing:
-        raise ValueError("Saved selection contains sources missing from this pack. Refresh sources and select again before generating.")
+        raise StaleSourceSelectionError("Upstream sources changed; the saved selection includes sources no longer in this pack. Choose sources again or Select all, then run again.")
     return set(chosen)
 
 

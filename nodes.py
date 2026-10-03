@@ -5,6 +5,7 @@ import json
 import torch
 import comfy.utils
 import comfy.audio
+from comfy_execution.graph_utils import ExecutionBlocker
 from comfy.ldm.minimax.vae import MiniMaxH3VideoVAE
 from comfy.ldm.minimax.audio_vae import MiniMaxH3AudioVAE
 from comfy_extras.nodes_minimax_h3 import _encode_ref_audio, video_latent_t
@@ -302,7 +303,13 @@ class SelectSources(io.ComfyNode):
 
     @classmethod
     def execute(cls, refmod, selection):
-        subset = core.select_sources(refmod, selection)
+        try:
+            subset = core.select_sources(refmod, selection)
+        except core.StaleSourceSelectionError as error:
+            # Publish the current catalog even for an in-memory Create output.
+            # Block both outputs so Save and generation cannot run on a guessed selection.
+            return io.NodeOutput(ExecutionBlocker(None), ExecutionBlocker(None),
+                ui={"sources": core.source_catalog(refmod), "text": [str(error)]})
         details = core.describe(subset)
         return io.NodeOutput(subset, details, ui={"sources": core.source_catalog(refmod), "text": [details]})
 

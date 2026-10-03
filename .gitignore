@@ -37,3 +37,4 @@
 
 !web/subject-fields.js
 !tests/test_subject_fields.mjs
+!tests/test_source_picker.mjs

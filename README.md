@@ -1,6 +1,6 @@
 # H3 RefMods Lab
 
-**Version 0.1.0** — an early release of the ComfyUI nodes. Interfaces and compatibility are still evolving.
+**Version 0.1.1** — an early release of the ComfyUI nodes. Interfaces and compatibility are still evolving.
 
 Image, video and audio reference packs for experimenting in ComfyUI.
 Uses ComfyUI's native MiniMax H3 visual/audio VAEs and reference conditioning. No training,
@@ -154,6 +154,13 @@ metadata on every incoming source, assigning them one subject; use Select Source
 first for a subset or one subject from a combined pack. Empty description/details
 clear those fields. For standalone audio in this editor, use the audio retention
 controls. Save the output to persist the changes. Original packs remain intact.
+
+If an upstream source changes and a saved selection becomes stale, queue the workflow
+once: the selector displays the current sources and pauses its downstream outputs.
+Choose sources again, **Select all**, or **Keep available selection**, then run again.
+Keep available selection retains only still-present checked sources, and can be empty.
+This also works on freshly created in-memory packs; it does not require saving first.
+New/replaced sources are never automatically added to an explicit selection.
 
 Place a selector after each subject's Load node and before Combine or Text Encode.
 Refresh supports saved packs through Load, Combine and other Select Sources nodes.
