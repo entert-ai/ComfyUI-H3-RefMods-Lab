@@ -266,7 +266,7 @@
         "2",
         0
       ],
-      "description": "a portrait",
+      "description": "her portrait",
       "subject_name": "Alice",
       "retention_strategy": "partially_preserved",
       "retention_details": "Preserve facial identity.",
@@ -281,7 +281,7 @@
         "4",
         0
       ],
-      "description": "body shape",
+      "description": "her body shape",
       "subject_name": "Alice",
       "retention_strategy": "partially_preserved",
       "retention_details": "Preserve proportions; clothing may change.",

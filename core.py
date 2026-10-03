@@ -72,7 +72,7 @@ def source_labels(entries):
 
 def reference_instructions(entries):
     """Assign labels only to the final active sources, exactly as Qwen does."""
-    subjects, definitions, retention = {}, [], []
+    subjects, groups, unassociated, retention = {}, {}, [], []
     counters = {"Picture": 0, "Video": 0, "Audio": 0}
     for entry in entries:
         if entry.get("strength", 1) <= 0:
@@ -83,7 +83,7 @@ def reference_instructions(entries):
         if subject_id and subject_name:
             if subject_id not in subjects:
                 subjects[subject_id] = (len(subjects) + 1, subject_name)
-                definitions.append(f"<Subject {len(subjects)}> is {subject_name.rstrip('.')}.")
+                groups[subject_id] = [f"<Subject {len(subjects)}> is {subject_name.rstrip('.')}."]
             subject = f"<Subject {subjects[subject_id][0]}>"
         modality = kind(entry)
         labels = ["Picture"] if modality == "image" else ["Audio", "Video"] if modality == "video_audio" else ["Audio"] if modality == "audio" else ["Video"]
@@ -97,12 +97,13 @@ def reference_instructions(entries):
             if not description and subject:
                 description = {"Picture": "a visual reference", "Video": "a video reference", "Audio": "an audio reference"}[label]
             if description:
-                definitions.append(f"{tag} provides {description}" + (f" for {subject}" if subject else "") + ".")
+                (groups[subject_id] if subject else unassociated).append(f"{tag} provides {description}.")
             paired_audio = modality == "video_audio" and label == "Audio"
             marker = entry.get("audio_retention_strategy" if paired_audio else "retention_strategy", "unspecified")
             details = entry.get("audio_retention_details" if paired_audio else "retention_details", "").strip().rstrip(".")
             if marker != "unspecified" or details:
                 retention.append(f"{tag}: " + (marker if marker != "unspecified" else "reference instructions") + (f" - {details}" if details else "") + ".")
+    definitions = unassociated + [line for lines in groups.values() for line in lines]
     return definitions, retention
 
 

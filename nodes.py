@@ -39,7 +39,7 @@ class Create(io.ComfyNode):
         return io.Schema(node_id="H3RefModLabCreate", display_name="Create H3 RefMod", category=CATEGORY,
             description="Encode each input image independently. A batch is separate pictures, not a video. Uses the native H3 VAE; no training or diffusion model needed.",
             inputs=[io.Vae.Input("vae"), io.Image.Input("images"),
-                io.String.Input("subject_name", display_name="Subject name", default="Subject", tooltip="Same subject name groups sources automatically. Source labels are generated, e.g. Alice1, Alice2."), io.String.Input("description", default="", multiline=True),
+                io.String.Input("subject_name", display_name="Subject name", default="Subject", tooltip="Same subject name groups sources automatically. Source labels are generated, e.g. Alice1, Alice2."), io.String.Input("description", default="", multiline=True, tooltip="What this source provides. Start with his/her/its, e.g. her three-quarters portrait. Text Encode groups sources under their subject."),
                 io.Int.Input("max_edge", default=768, min=32, max=2048, step=32),
                 io.Int.Input("max_tokens", default=8192, min=0, max=1048576, tooltip="DiT reference-token budget; 0 disables. Excludes Qwen vision tokens.")] + instruction_inputs(),
             outputs=[REFMOD.Output(), io.String.Output(display_name="details")])
@@ -114,7 +114,7 @@ class CreateVideo(io.ComfyNode):
             description="One IMAGE batch is one video. Samples at 24 fps, trims down to 5+17k frames, stores exact H3 latents and 2 fps JPEG frames for Qwen. Optional audio is the synchronized soundtrack of this same clip.",
             inputs=[io.Vae.Input("vae"), io.Image.Input("frames"),
                 io.Float.Input("source_fps", default=24, min=0.01, max=240, force_input=True),
-                io.String.Input("subject_name", display_name="Subject name", default="Subject", tooltip="Use the same name as the subject's image/audio sources."), io.String.Input("description", default="", multiline=True),
+                io.String.Input("subject_name", display_name="Subject name", default="Subject", tooltip="Use the same name as the subject's image/audio sources."), io.String.Input("description", default="", multiline=True, tooltip="What this source provides. Start with his/her/its, e.g. her three-quarters portrait. Text Encode groups sources under their subject."),
                 io.Float.Input("start_seconds", default=0, min=0, max=86400, step=0.01),
                 io.Float.Input("duration_seconds", default=3, min=0.21, max=15, step=0.01),
                 io.Int.Input("max_edge", default=512, min=32, max=2048, step=32),
@@ -182,7 +182,7 @@ class CreateAudio(io.ComfyNode):
         return io.Schema(node_id="H3RefModLabCreateAudio", display_name="Create H3 Audio RefMod", category=CATEGORY,
             description="Encode one standalone voice/sound reference with H3's audio VAE. Mono is duplicated to stereo; native encoding resamples to 32 kHz. Raw audio is not stored; Qwen sees an Audio label.",
             inputs=[io.Vae.Input("audio_vae"), io.Audio.Input("audio"),
-                io.String.Input("subject_name", display_name="Subject name", default="Subject", tooltip="Use the same name as the subject's visual sources."), io.String.Input("description", default="", multiline=True),
+                io.String.Input("subject_name", display_name="Subject name", default="Subject", tooltip="Use the same name as the subject's visual sources."), io.String.Input("description", default="", multiline=True, tooltip="What this source provides. Start with his/her/its, e.g. her three-quarters portrait. Text Encode groups sources under their subject."),
                 io.Float.Input("start_seconds", default=0, min=0, max=86400, step=0.01),
                 io.Float.Input("duration_seconds", default=3, min=0.21, max=15, step=0.01),
                 io.Int.Input("max_tokens", default=8192, min=0, max=1048576)] + instruction_inputs(audio_only=True),
@@ -335,7 +335,7 @@ class SetInstructions(io.ComfyNode):
         return io.Schema(node_id="H3RefModLabSetInstructions", display_name="Set H3 RefMod Instructions", category=CATEGORY,
             description="Set one subject's prompt metadata on every source in the incoming pack without re-encoding. Use Select Sources first for a subset. Save the output to persist changes. For standalone audio, use audio_retention_strategy/details.",
             inputs=[REFMOD.Input("refmod"), io.String.Input("description", default="", multiline=True,
-                    tooltip="What these sources provide, e.g. a portrait. Empty clears the description.")] + instruction_inputs(paired=True, include_subject=True),
+                    tooltip="What these sources provide. Start with his/her/its, e.g. her three-quarters portrait. Empty clears the description.")] + instruction_inputs(paired=True, include_subject=True),
             outputs=[REFMOD.Output(), io.String.Output(display_name="details")])
 
     @classmethod

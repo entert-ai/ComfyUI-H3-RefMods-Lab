@@ -133,6 +133,12 @@ selection; zero strength omits a source. Check the reference map before writing
 numbered references in your scene. Metadata descriptions/details should use plain
 text rather than hard-coded reference numbers or ambiguous pronouns.
 
+Generated source descriptions are grouped directly beneath their subject definition,
+without a repeated `for <Subject N>` suffix. Start descriptions with **his/her/its**,
+e.g. `her three-quarters portrait` or `its surface texture`. The text is used as written;
+pronouns are not inferred. Subject grouping may put Picture 1 and Picture 3 together
+before another subject's Picture 2. Their numbers still match the actual reference order.
+
 Visual retention presets are `unspecified`, `fully_preserved`, `partially_preserved`,
 `attribute_transfer`, and `weak_reference`. Audio uses `unspecified`, `fully_copy`,
 `partially_copy`, `reference`, and `weak_reference`. Paired video/audio has separate

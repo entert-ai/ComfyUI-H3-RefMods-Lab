@@ -62,7 +62,7 @@ class RefModTests(unittest.TestCase):
         c = nodes.SetInstructions.execute(pack("Alice"), "a different person", subject_name="Alice Jones").result[0]
         combined = core.combine_many([(a, 1), (b, 1), (c, 1)])
         definitions, retention = core.reference_instructions(combined["entries"])
-        self.assertEqual(definitions, ["<Subject 1> is Alice.", "<Picture 1> provides a portrait for <Subject 1>.", "<Picture 2> provides her body shape for <Subject 1>.", "<Subject 2> is Alice Jones.", "<Picture 3> provides a different person for <Subject 2>."])
+        self.assertEqual(definitions, ["<Subject 1> is Alice.", "<Picture 1> provides a portrait.", "<Picture 2> provides her body shape.", "<Subject 2> is Alice Jones.", "<Picture 3> provides a different person."])
         self.assertIn("<Picture 1>: partially_preserved - Keep facial identity; allow new clothing.", retention)
         with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
             restored = core.load_pack(core.save_pack(combined, directory, "instructions"))
@@ -76,14 +76,14 @@ class RefModTests(unittest.TestCase):
         self.assertIs(original["entries"][0]["latent"], changed["entries"][0]["latent"])
         self.assertEqual(original["entries"][0]["description"], "reference description")
         empty_description = nodes.SetInstructions.execute(original, "", subject_name="Alice").result[0]
-        self.assertIn("<Picture 1> provides a visual reference for <Subject 1>.", core.reference_instructions(empty_description["entries"])[0])
+        self.assertIn("<Picture 1> provides a visual reference.", core.reference_instructions(empty_description["entries"])[0])
 
     def test_instruction_selection_renumbering_and_conflicts(self):
         a = nodes.SetInstructions.execute(pack("Alice"), "a portrait", subject_name="Alice").result[0]
         b = nodes.SetInstructions.execute(pack("Bob"), "a portrait", subject_name="Bob").result[0]
         combined = core.combine_many([(a, 0), (b, 1)])
         definitions, _ = core.reference_instructions(combined["entries"])
-        self.assertEqual(definitions, ["<Subject 1> is Bob.", "<Picture 1> provides a portrait for <Subject 1>."])
+        self.assertEqual(definitions, ["<Subject 1> is Bob.", "<Picture 1> provides a portrait."])
         combined = core.combine_many([(a, 1), (b, 1)])
         selected = core.select_sources(combined, json.dumps([core.source_ids(combined)[1]]))
         self.assertEqual(core.reference_instructions(selected["entries"])[0], definitions)
@@ -98,9 +98,9 @@ class RefModTests(unittest.TestCase):
         voice = nodes.SetInstructions.execute(audio_pack(), "a voice", subject_name="Alice", audio_retention_strategy="weak_reference").result[0]
         result = core.combine_many([(voice, 1), (paired, 1)])
         definitions, retention = core.reference_instructions(result["entries"])
-        self.assertIn("<Audio 1> provides a voice for <Subject 1>.", definitions)
-        self.assertIn("<Audio 2> provides the synchronized soundtrack for <Subject 1>.", definitions)
-        self.assertIn("<Video 1> provides walking motion for <Subject 1>.", definitions)
+        self.assertIn("<Audio 1> provides a voice.", definitions)
+        self.assertIn("<Audio 2> provides the synchronized soundtrack.", definitions)
+        self.assertIn("<Video 1> provides walking motion.", definitions)
         self.assertIn("<Audio 2>: reference - Voice timbre only.", retention)
         self.assertIn("<Video 1>: attribute_transfer.", retention)
         self.assertEqual(core.token_count(result["entries"]), core.token_count(voice["entries"] + paired["entries"]))
@@ -163,6 +163,20 @@ class RefModTests(unittest.TestCase):
                 expected = nodes.SetInstructions.execute(core.load_pack(saved), "portrait", "Alice").result[0]
                 self.assertEqual(core.source_catalog(result), core.source_catalog(expected))
                 self.assertEqual(core.source_ids(result), core.source_ids(core.load_pack(saved)))
+
+    def test_prompt_groups_interleaved_sources_without_changing_labels(self):
+        alice_portrait = core.set_instructions(pack("portrait"), "her three-quarters portrait", "Alice")
+        bob = core.set_instructions(pack("bob"), "his portrait", "Bob")
+        alice_body = core.set_instructions(pack("body"), "her body shape", "Alice")
+        combined = core.combine_many([(alice_portrait, 1), (bob, 1), (alice_body, 1)])
+        ids = core.source_ids(combined)
+        definitions, _ = core.reference_instructions(combined["entries"])
+        self.assertEqual(definitions, ["<Subject 1> is Alice.", "<Picture 1> provides her three-quarters portrait.", "<Picture 3> provides her body shape.", "<Subject 2> is Bob.", "<Picture 2> provides his portrait."])
+        self.assertEqual(core.source_ids(combined), ids)
+        self.assertEqual([entry["description"] for entry in combined["entries"]], ["her three-quarters portrait", "his portrait", "her body shape"])
+        prompt = core.build_prompt(combined["entries"], "[Summary]\nAlice and Bob wave.", True)
+        self.assertNotIn("for <Subject", prompt)
+        self.assertLess(prompt.index("<Picture 3>"), prompt.index("<Subject 2>"))
 
     def test_uniform_combine_order_and_strength(self):
         original = pack()
