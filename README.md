@@ -1,5 +1,7 @@
 # H3 RefMods Lab
 
+**Version 1.0.0** — the first versioned release of the ComfyUI nodes.
+
 Image, video and audio reference packs for experimenting in ComfyUI.
 Uses ComfyUI's native MiniMax H3 visual/audio VAEs and reference conditioning. No training,
 model patches, cloud calls or weight downloads.

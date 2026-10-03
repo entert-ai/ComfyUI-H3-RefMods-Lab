@@ -2,6 +2,7 @@ from comfy_api.latest import ComfyExtension
 from .nodes import NODE_CLASSES
 
 WEB_DIRECTORY = "./web"
+__version__ = "1.0.0"
 
 
 class H3RefModsLabExtension(ComfyExtension):
