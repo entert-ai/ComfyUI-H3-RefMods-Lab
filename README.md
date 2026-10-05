@@ -1,10 +1,20 @@
 # H3 RefMods Lab
 
-**Version 0.1.1** — an early release of the ComfyUI nodes. Interfaces and compatibility are still evolving.
+Build reusable MiniMax H3 reference packs from images, video and audio, then mix and select sources for each generation.
 
-Image, video and audio reference packs for experimenting in ComfyUI.
-Uses ComfyUI's native MiniMax H3 visual/audio VAEs and reference conditioning. No training,
-model patches, cloud calls or weight downloads.
+Save encoded references, subject descriptions and retention instructions together – spend less time preparing references and more time creating.
+
+**Features**
+
+- Build once, reuse across generations. Save encoded references as compact .safetensors RefMods, avoiding repeated VAE encoding.
+- Choose your references for each generation. Include or exclude individual sources from a loaded RefMod without rebuilding it.
+- Mix images, video and audio. Combine separate reference packs into one reusable RefMod.
+- Save subject descriptions and retention instructions. Automatically assemble subject definitions and retention analysis in the H3 prompt, leaving you to describe the target video.
+- Control reference influence. Adjust individual source strengths and apply a strength multiplier to each RefMod when combining.
+- Combine up to 100 RefMods. Dynamically expanding inputs make it easy to assemble larger reference collections.
+- Reopen the creation workflow. Drag a RefMod saved with embedded workflow metadata into ComfyUI to recover its original workflow.
+
+**Version 0.1.1** — an early release of the ComfyUI nodes. Interfaces and compatibility are still evolving.
 
 ## Install and start
 
