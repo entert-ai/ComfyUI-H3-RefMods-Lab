@@ -6,7 +6,7 @@ Save encoded references, subject descriptions and retention instructions togethe
 
 **Features**
 
-- Build once, reuse across generations. Save encoded references as compact .safetensors RefMods, avoiding repeated VAE encoding.
+- Build once, reuse across generations. Save encoded references as compact `.safetensors` RefMods, avoiding repeated VAE encoding.
 - Choose your references for each generation. Include or exclude individual sources from a loaded RefMod without rebuilding it.
 - Mix images, video and audio. Combine separate reference packs into one reusable RefMod.
 - Save subject descriptions and retention instructions. Automatically assemble subject definitions and retention analysis in the H3 prompt, leaving you to describe the target video.
@@ -15,6 +15,8 @@ Save encoded references, subject descriptions and retention instructions togethe
 - Reopen the creation workflow. Drag a RefMod saved with embedded workflow metadata into ComfyUI to recover its original workflow.
 
 **Version 0.1.1** — an early release of the ComfyUI nodes. Interfaces and compatibility are still evolving.
+
+
 
 ## Install and start
 
