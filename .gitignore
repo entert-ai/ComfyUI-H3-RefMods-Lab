@@ -17,24 +17,16 @@
 !tools/
 !tools/smoke_refmod_vae.py
 !tools/smoke_refmod_av.py
-!workflows/01_create_refmod.api.json
-!workflows/01_create_refmod.json
-!workflows/02_generate_with_refmod.api.json
-!workflows/02_generate_with_refmod.json
-!workflows/03_two_refmods.api.json
-!workflows/03_two_refmods.json
-!workflows/04_latents_only.api.json
-!workflows/04_latents_only.json
-!workflows/05_create_video_refmod.api.json
-!workflows/05_create_video_refmod.json
-!workflows/06_create_audio_refmod.api.json
-!workflows/06_create_audio_refmod.json
-!workflows/07_combine_refmods.api.json
-!workflows/07_combine_refmods.json
 
-!workflows/08_saved_instructions.json
-!workflows/08_saved_instructions.api.json
 
 !web/subject-fields.js
 !tests/test_subject_fields.mjs
 !tests/test_source_picker.mjs
+
+!workflows/01_create_refmod_Alice.json
+!workflows/02_generate_with_refmod_Alice.json
+!docs/
+!docs/images/
+!docs/images/01_create_refmod_Alice.png
+!docs/images/02_generate_with_refmod_Alice.png
+!docs/technical-notes.md

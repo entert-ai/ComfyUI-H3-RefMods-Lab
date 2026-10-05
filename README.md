@@ -16,287 +16,148 @@ Save encoded references, subject descriptions and retention instructions togethe
 
 **Version 0.1.1** — an early release of the ComfyUI nodes. Interfaces and compatibility are still evolving.
 
-
-
 ## Install and start
 
-Clone this repository into your ComfyUI `custom_nodes` folder:
+Use a recent ComfyUI version with native MiniMax H3 and subgraph support. From
+your ComfyUI folder, run:
 
-```text
-git clone https://github.com/entert-ai/ComfyUI-H3-RefMods-Lab.git
+```bash
+git clone https://github.com/entert-ai/ComfyUI-H3-RefMods-Lab.git custom_nodes/ComfyUI-H3-RefMods-Lab
 ```
 
-Alternatively copy this folder into your ComfyUI `custom_nodes` folder. Dependencies
-are already present in a standard ComfyUI installation. Restart ComfyUI and refresh
-its browser page. Nodes appear under **MiniMax H3 / RefMods Lab**.
+Restart ComfyUI and refresh its browser page. Find the nodes under
+**MiniMax H3 / RefMods Lab**. The dependencies in [requirements.txt](requirements.txt)
+are included in a standard ComfyUI installation.
 
-Drag the **UI JSON** files from `workflows/` into ComfyUI. Files ending `.api.json`
-are companion API graphs, not canvas workflows. Choose your own reference files;
-placeholder filenames deliberately contain no personal content.
+**Creating RefMods needs the appropriate H3 VAE.** Generating video also needs
+an H3 Ref2VA model, its Qwen3-VL text encoder, and the visual/audio VAEs. Select
+your installed variants in the workflows; weights and source files are not included.
 
-1. **01_create_refmod.json** — choose an image, name and description. Select the
-   H3 visual VAE. Queue to encode, inspect
-   and save. Saves go to `ComfyUI/models/h3_refmods_lab`, with numbered filenames
-   that never overwrite existing packs. Source images are embedded in the pack.
-   **Embed workflow** is on by default: drag a newly saved `.safetensors` onto
-   ComfyUI to restore its creation graph, just like a generated image. This saves
-   the graph used at creation time, not a later generation workflow. Original
-   Load Image files must still be available to rerun that graph; embedded JPEGs
-   remain usable through Load RefMod even without the original files. The graph
-   includes its filenames, prompts and settings. Turn the option off if unwanted;
-   ComfyUI's `--disable-metadata` flag also disables embedding. API-only saves
-   contain the API prompt but need `extra_pnginfo.workflow` for the canvas graph.
-   Filename suffixes use a persistent counter per name within the save folder:
-   `subject_00001.safetensors`, `voice_00001.safetensors`, then
-   `subject_00002.safetensors`, and so on. Deleting
-   old packs does not reuse their numbers. The hidden `.h3-refmods-counter.sqlite3`
-   file retains the counter; include it when backing up or moving the folder.
-   An existing folder seeds each name from its highest numbered filename. Names
-   differing only in letter case share one counter. Upgrading from the former
-   shared counter preserves existing filenames; new names start at 00001. That
-   old shared counter cannot reconstruct the names of previously deleted files.
-   Failed saves may leave harmless gaps. Five digits are minimum padding: after
-   99999 the number becomes 100000. Saves still never overwrite existing files.
-2. Refresh ComfyUI's node/model definitions (reload the browser if needed), then
-   load **02_generate_with_refmod.json**. Select the saved pack and check the
-   Inspect node's Picture map. Edit the prompt's subject definitions accordingly.
-   On **Select H3 RefMod Sources**, click **Refresh sources** to show thumbnails,
-   then use the checkboxes to include or exclude individual sources. A video and
-   its paired soundtrack are one selectable source. **Select all**
-   and **Clear all** are available. The selected count and active DiT token count
-   update immediately, without VAE encoding. Checkboxes are saved in the workflow;
-   the original pack stays intact. Refresh again after changing an upstream pack.
-3. **03_two_refmods.json** provides two loaders and independent strength controls.
-   Its example assumes one picture per pack. A pack containing three images uses
-   Picture 1–3, so the next pack starts at Picture 4. The Inspect map is authoritative.
-4. **04_latents_only.json** is an alternate experimental path: Qwen sees only the
-   text, and Apply appends saved latents to native H3 conditioning.
-5. **05_create_video_refmod.json** — Load Video → Get Video Components → Create H3
-   Video RefMod. Connect the actual source fps, visual VAE and optionally the
-   soundtrack plus H3 audio VAE. Disconnect audio to create a silent video reference.
-   Default: first 3 seconds, max_edge 512. H3 frame alignment trims this to 56 frames
-   (~2.33 seconds). Inspect reports the actual interval. This is one temporal
-   reference, not many pictures. Combine with existing packs before Save to add it.
-6. **06_create_audio_refmod.json** — Load Audio → Create H3 Audio RefMod using the
-   H3 audio VAE. Default: first 3 seconds. Combine with a subject's visual pack to
-   store appearance and voice together. Describe the voice's role explicitly in
-   the generation prompt using Inspect's Audio labels.
-7. **07_combine_refmods.json** — four packs feeding one expanding Combine node.
-   Inputs are numbered from 1. Connect another pack to the next empty socket;
-   ComfyUI adds another automatically, up to 100 inputs total. Every connected
-   pack has the same strength slider, saved with the workflow. Unconnected sockets
-   are ignored; reference order follows input numbers. Refresh sources supports
-   the whole combined set.
+To update, run `git pull` inside the node's repository folder, then restart
+ComfyUI and refresh the browser.
 
-8. **08_saved_instructions.json** — two packs supplying Alice's portrait and body shape.
-   Set Instructions attaches matching subject names and separate retention details;
-   Text Encode builds the reference instructions. Save the edited packs to persist them.
+## Example workflows
 
-The generation workflows use installed H3 Ref2VA INT8 weights, H3 Qwen3-VL NVFP4,
-both VAEs, Comfy Kitchen attention, native sol-attn, Euler/simple, 20 steps and
-fixed seed 42. Initial output is 768×448 at 24 fps and 124 frames (~5.17 seconds).
-Adjust model filenames if using another installation. Generation workflow 02 also
-accepts mixed packs; revise its image-only example prompt to match the actual
-Picture, Video and Audio labels. The output workflows decode and save audio.
+Drag either JSON into ComfyUI. The screenshots open at full resolution when clicked.
+
+### 1. Create Alice and prepare an outfit
+
+[![Create an Alice RefMod from two image references](docs/images/01_create_refmod_Alice.png)](docs/images/01_create_refmod_Alice.png)
+
+Open [01_create_refmod_Alice.json](workflows/01_create_refmod_Alice.json).
+
+1. Choose a portrait, a full-body image and your H3 visual VAE.
+2. Keep the shared **Subject Name** as `Alice`. Give each source a description,
+   retention strategy and encoding resolution.
+3. Queue to encode, combine, preview and save the two sources as one RefMod.
+
+**Prepare Outfit1 with the same workflow:** change Subject Name to `Outfit1`,
+replace the images with outfit references, and replace Alice's descriptions and
+retention details with clothing details. For example, describe `its front view`
+and the cut, colour and fabric to preserve with `fully_preserved`. Disconnect
+the unused Create branch from Combine if using one image, then queue to save.
+
+The first saves are `Alice_00001.safetensors` and `Outfit1_00001.safetensors`.
+Use the actual saved filenames if your counters are already higher. If Alice's
+source clothing differs from the target outfit, choose `partially_preserved`
+for that Alice source and specify that her identity stays while clothing may change.
+
+### 2. Select, combine and generate
+
+[![Select Alice and Outfit references, combine their strengths and generate video](docs/images/02_generate_with_refmod_Alice.png)](docs/images/02_generate_with_refmod_Alice.png)
+
+*The screenshot shows an earlier soundscape; the downloadable workflow uses park ambience.*
+
+Open [02_generate_with_refmod_Alice.json](workflows/02_generate_with_refmod_Alice.json).
+
+1. Select your Alice and Outfit packs in the Load nodes and your installed models
+   in the loaders, including the audio VAE inside the sampling subgraph.
+2. Click **Refresh sources** in each selector and choose the references to use.
+3. Balance the packs with Combine's strength sliders, edit the video description,
+   and queue to generate a video with audio.
+
+**Include saved reference instructions** is enabled. Text Encode adds the saved
+subject definitions and retention analysis; Preview Any shows the exact final prompt.
+With Alice first and Outfit second, both active, `<Subject 1>` is Alice and
+`<Subject 2>` is Outfit1. Check that mapping whenever you change the references.
+
+Resolution, length, seed and steps are exposed on the sampling subgraph. The
+example uses Euler/simple at 24 fps; its model choices are editable.
 
 ## Nodes
 
-| Node | Behaviour |
+| Node | Use |
 | --- | --- |
-| Create H3 RefMod | Sequentially encode every input image as a separate picture. |
-| Create H3 Video RefMod | Encode one frame batch at 24 fps, optionally with its synchronized soundtrack. |
-| Create H3 Audio RefMod | Encode one mono/stereo standalone audio interval. |
-| Save H3 RefMod | Save a numbered `.safetensors` pack and return its exact path. |
-| Load H3 RefMod | Load a Lab v1 or v2 pack on CPU; changed files invalidate its cache. |
-| Combine H3 RefMods | Combine up to 100 packs through expanding inputs, with individual strengths; uniform inputs numbered from 1 and matching sliders for every connected pack. |
-| Select H3 RefMod Sources | Choose a subset using thumbnails and checkboxes; no re-encoding or file changes. |
-| Apply H3 RefMod (Latents Only) | Append latents while preserving existing refs, guides and conditioning entries. |
-| H3 RefMod Text Encode | Optionally generate saved reference instructions; present media to H3 Qwen, attach latents and output the final prompt. |
-| Set H3 RefMod Instructions | Edit one subject's source descriptions and retention metadata without re-encoding. |
-| Inspect H3 RefMod | Show active reference labels, resolution, VAE label and DiT token count; output thumbnails for Preview Image. |
+| Create H3 RefMod | Encode images as individual reference sources. |
+| Create H3 Video RefMod | Encode a video, optionally with its soundtrack. |
+| Create H3 Audio RefMod | Encode an audio reference. |
+| Combine H3 RefMods | Merge up to 100 packs with a strength slider per input. |
+| Select H3 RefMod Sources | Include or exclude sources without re-encoding. |
+| H3 RefMod Text Encode | Build the prompt, present references to Qwen and attach saved latents. |
+| Set H3 RefMod Instructions | Edit subject descriptions and retention metadata without re-encoding. |
+| Save / Load H3 RefMod | Store and reuse numbered `.safetensors` packs. |
+| Inspect H3 RefMod | Preview sources, active reference labels and token usage. |
+| Apply H3 RefMod (Latents Only) | Attach latents to existing conditioning without presenting media to Qwen. |
+
+## Prompt and reference controls
+
+- **Subject names group sources.** Use the same name across a subject's image,
+  video and audio branches; case and extra spaces are ignored. Different subjects
+  need distinct names. Start descriptions with `his`, `her` or `its`, such as
+  `her portrait`. Descriptions are used as written.
+- **Automatic prompt sections are optional.** Enable `include_saved_instructions`
+  in Text Encode and write the target video's action, shots, style and sound.
+  Remove manual `[Subject Definitions]` and `[Retention Analysis]` sections
+  when enabled. Use `final_prompt` to inspect the result.
+- **Labels follow active references.** Subject, Picture, Video and Audio numbers
+  can change after selection or reordering. Scene references are not rewritten
+  automatically. Check the final prompt and reference map before generating.
+- **Strength applies per Combine input.** The range is 0–2, with 1 as the baseline.
+  For independent control of a source, select it into a separate Combine input.
+  Zero omits the reference from Qwen and diffusion; strengths are experimental,
+  not identity-retention percentages.
+- **Edit metadata with Set Instructions.** It changes every incoming source;
+  select a subset first to edit only those sources. For standalone audio, use
+  its audio retention controls. Save the output to persist your edits.
+
+| Reference | Retention strategies |
+| --- | --- |
+| Image / video | `fully_preserved`, `partially_preserved`, `attribute_transfer`, `weak_reference` |
+| Audio | `fully_copy`, `partially_copy`, `reference`, `weak_reference` |
+
+`unspecified` leaves the strategy unset. Retention instructions guide the prompt;
+they do not change latent strength or guarantee the outcome. Paired video/audio
+has separate visual and soundtrack retention controls.
 
 **Text Encode already attaches the references. Do not also Apply the same pack.**
-Text Encode creates fresh conditioning and does not merge an existing reference
-workflow. Add native guides downstream if needed. Inspect's numbering describes
-the pack's own Text Encode path; latent-only Apply cannot assign Qwen labels to
-images Qwen has not seen.
 
-**Combine node update:** Replace existing Combine nodes and reconnect their packs in older workflows. The inputs are now `refmod_1` through `refmod_100`, with matching 0–2 strength sliders. Existing saved RefMod files remain compatible. Updated example workflows use the new layout. API inputs use `refmods.refmod_1`, etc., and a `strengths` JSON object such as `{"refmod_1":1,"refmod_2":0.5}`.
+## Saving and reopening
 
-Saved instructions are optional metadata, carried by each source inside the `.safetensors`
-file. All Create nodes have one **Subject name** field, plus the source description
-and retention controls. Sources with the same subject name group automatically,
-ignoring capitalization and extra spaces. Use different names for different subjects,
-e.g. Alice Smith and Alice Jones. A Create batch shares one subject; use separate
-branches for different descriptions. Source labels such as Alice1 and Alice2 are
-assigned automatically in pack order. They are display labels, not filenames or
-reference tokens, and may renumber after selection/reordering. Internal selection
-IDs remain unchanged. Save's filename field still controls the output filename.
-Create nodes do not ask for VAE labels: the connected VAE determines encoding.
-Existing VAE labels in saved packs remain readable.
-Older saved packs remain readable; subject metadata is grouped by name even if
-it contains former grouping keys. Old canvas node fields migrate when loaded. API callers should use `subject_name`;
-the former `name` and `subject_key` inputs have been removed.
+Packs are saved to `ComfyUI/models/h3_refmods_lab`. Each filename prefix has a
+persistent counter; deleting old files does not restart it. Back up the hidden
+`.h3-refmods-counter.sqlite3` file with your packs to preserve the counters.
 
-Enable **include_saved_instructions** in Text Encode to prepend `[Subject Definitions]`
-and `[Retention Analysis]` to your scene prompt. It is off by default for existing
-manual prompts. Remove competing manual sections when enabled; duplicate sections
-produce an explicit error. `final_prompt` is the exact string sent to H3. Subject,
-Picture, Video and Audio numbers follow the active sources after combining and
-selection; zero strength omits a source. Check the reference map before writing
-numbered references in your scene. Metadata descriptions/details should use plain
-text rather than hard-coded reference numbers or ambiguous pronouns.
+**Embed workflow** is on by default. Drag a saved RefMod into ComfyUI to reopen
+its creation graph. Original source files are needed to rerun that graph, but
+loading the saved pack for generation does not require them. Embedded workflows
+include prompts and filenames; disable embedding before sharing if needed.
 
-Generated source descriptions are grouped directly beneath their subject definition,
-without a repeated `for <Subject N>` suffix. Start descriptions with **his/her/its**,
-e.g. `her three-quarters portrait` or `its surface texture`. The text is used as written;
-pronouns are not inferred. Subject grouping may put Picture 1 and Picture 3 together
-before another subject's Picture 2. Their numbers still match the actual reference order.
+## Practical limits and troubleshooting
 
-Visual retention presets are `unspecified`, `fully_preserved`, `partially_preserved`,
-`attribute_transfer`, and `weak_reference`. Audio uses `unspecified`, `fully_copy`,
-`partially_copy`, `reference`, and `weak_reference`. Paired video/audio has separate
-soundtrack retention controls. These are prompt instructions, not guaranteed outcomes
-or changes to latent strength. Text grows slightly; latent tensors and DiT budgets
-remain unchanged. Old packs load without subject metadata and can still contribute
-source descriptions when enabled.
+- **Large references cost more.** Higher resolution and longer clips increase
+  token usage and generation memory. Start small; `max_edge` limits visual
+  resolution and `max_tokens` checks the reference budget.
+- **Video timing is normalized.** Supply the source's actual fps. Video is sampled
+  at 24 fps and trimmed to H3's frame alignment. Long input videos may use substantial
+  RAM before trimming. A video and its paired soundtrack are selected together.
+- **Audio needs explicit instructions.** Qwen receives audio labels, not a
+  transcript. Describe whether to follow a voice, rhythm, soundtrack or ambience.
+- **Changed sources may pause generation.** If a saved selection becomes stale,
+  run once to refresh its cards, then reselect, choose **Select all**, or use
+  **Keep available selection** and run again. An empty selection omits the pack;
+  empty packs cannot be saved.
+- **This is the Lab RefMod format.** Lab v1 image packs and v2 mixed packs are
+  supported; other community RefMod formats are not interchangeable.
 
-**Set H3 RefMod Instructions** edits an existing pack without a VAE. It replaces
-metadata on every incoming source, assigning them one subject; use Select Sources
-first for a subset or one subject from a combined pack. Empty description/details
-clear those fields. For standalone audio in this editor, use the audio retention
-controls. Save the output to persist the changes. Original packs remain intact.
-
-If an upstream source changes and a saved selection becomes stale, queue the workflow
-once: the selector displays the current sources and pauses its downstream outputs.
-Choose sources again, **Select all**, or **Keep available selection**, then run again.
-Keep available selection retains only still-present checked sources, and can be empty.
-This also works on freshly created in-memory packs; it does not require saving first.
-New/replaced sources are never automatically added to an explicit selection.
-
-Place a selector after each subject's Load node and before Combine or Text Encode.
-Refresh supports saved packs through Load, Combine and other Select Sources nodes.
-For an unsaved in-memory pack, queue only the selector first to populate its cards.
-An empty selection omits that pack from both Qwen and the DiT; if every pack is
-empty, Text Encode supplies text-only conditioning. Saving an empty pack is rejected.
-Picture, Video and Audio numbers each close up after exclusions; prompts are not rewritten automatically.
-Inspect after Combine shows the final map. Stable source IDs preserve explicit
-selections across reloads and strength changes. A changed pack with missing selected
-sources raises an error until you choose again. Preview reads only explicitly
-connected Lab files and uses stored JPEGs, not the VAE or Qwen.
-
-For multiple same-size pictures, connect an IMAGE batch to Create. Each batch
-element remains one image, not a video frame. For different sizes, use separate
-Load Image → Create branches sharing one VAE, Combine, then Save. The same
-technique combines different subjects; names/descriptions are metadata and are
-not automatic subject bindings or trigger words.
-
-## Encoding and experiments
-
-`max_edge` limits the longest side, with no deliberate enlargement except rounding
-dimensions to H3's 32-pixel grid. Rounding can slightly change aspect ratio.
-References retain full VAE latents; there is no pooling, refinement or latent
-compression. Prepared source images are stored as quality-95 JPEG bytes for Qwen,
-so reference presentation is slightly lossy while saved latent tensors are exact.
-The VAE label is user-supplied provenance, not an automatically verified file hash.
-
-Token budgets reject overflow before encoding/saving rather than dropping images.
-One image uses `(width/32) × (height/32)` DiT tokens; budgets exclude Qwen vision
-tokens and target-video tokens. `max_tokens=0` explicitly disables the budget.
-Apply counts existing native image, video and audio references as well as new sources.
-Video uses `latent_T × (width/32) × (height/32)` tokens; stereo audio uses
-`2 × audio_latent_T` (about 80 tokens per second). Paired clips use their sum.
-
-Strength 1 is the baseline. Other strengths scale latent values; they are an
-experimental control, not a measured identity-retention percentage. Combine
-multiplies existing strengths, with an allowed effective range of 0–2. Zero-strength
-references are omitted from both Text Encode presentation and DiT conditioning,
-and remaining Picture numbers close up. Inspect thumbnails include every stored
-source, including inactive ones. Learned compression remains future work.
-Existing community RefMods are rejected clearly: this is a distinct,
-versioned Lab format, not a claim of cross-format compatibility.
-
-For comparison, keep model, seed, prompt, dimensions, steps and attention settings
-fixed. Compare ordinary native image references against Lab Text Encode first,
-then compare the latent-only workflow. Use matching reference resize settings:
-native `match` sizes by generation area, whereas Create sizes by `max_edge`.
-
-## Video and audio caveats
-
-- New packs use Lab v2; existing v1 image packs and image source selections still
-  load. Older copies of these nodes cannot read v2 packs.
-- Connect the source's real fps. Videos are sampled by time to 24 fps using the
-  nearest preceding source frame, without optical flow. Low-fps input repeats
-  frames. Variable-frame-rate sources should be normalized to constant fps first.
-  This initial path decodes the source frame batch before trimming, so long source
-  files can consume substantial RAM even when only a short interval is encoded.
-- Video intervals trim down to `5+17k` frames and retain their original timing.
-  Input controls allow up to 15 seconds; reference quality at very short durations
-  has not been established. No hidden generation-length truncation occurs after
-  loading a pack. The paired soundtrack must cover the retained video interval.
-- Video adds temporal tokens at every diffusion step. For example, 56 frames at
-  512×288 use 17×16×9 = 2,448 visual tokens; its soundtrack adds about 187 tokens.
-  The same duration at 768×448 uses 5,712 visual tokens. Start with one short video;
-  large reference sets may dominate other subjects and exceed VRAM during generation.
-- H3 audio encoding uses its separate 32 kHz stereo VAE. Mono is duplicated to
-  stereo. Packs retain exact audio latents, not the original recording. A waveform
-  thumbnail identifies audio sources; in-node playback is not implemented.
-- Qwen sees sampled video JPEGs at 2 fps with timestamps. It receives only labels
-  for audio; no transcript is inferred or embedded. Describe which subject should
-  use `<Audio 1>` and whether you want its voice, ambience or another sound property.
-  A reference is conditioning, not a guarantee of verbatim audio reproduction or
-  exact frame copying. Use native guides when a source must be anchored on the
-  output timeline.
-- Video/audio packs will be larger than small image packs. The full latent payload
-  is retained; video also includes sparse JPEG frames for Qwen. Selecting a paired
-  video currently includes/excludes its soundtrack together; create silent video
-  and standalone audio packs if separate runtime control is needed.
-
-Example bindings for a pack with one image, one video with soundtrack, and one
-standalone voice reference:
-
-```text
-[Subject Definitions]
-<Subject 1> is the person in <Picture 1>, with the voice of <Audio 2>.
-
-[Retention Analysis]
-Retain the appearance of <Subject 1> from <Picture 1>.
-Use <Video 1> as the reference for motion.
-
-[Soundscape]
-<Subject 1> speaks in the voice of <Audio 2>.
-```
-
-The paired soundtrack has Audio 1 because its label precedes Video 1. Always use
-Inspect's actual map rather than assuming labels from this example.
-
-## Verification
-
-From this repository, use ComfyUI's Python and pass your ComfyUI installation
-directory explicitly. Replace the example installation path below with your own:
-
-```powershell
-& 'C:\path\to\ComfyUI\.venv\Scripts\python.exe' tests/test_refmods.py 'C:\path\to\ComfyUI'
-& 'C:\path\to\ComfyUI\.venv\Scripts\python.exe' tools/smoke_refmod_vae.py 'C:\path\to\ComfyUI'
-& 'C:\path\to\ComfyUI\.venv\Scripts\python.exe' tools/smoke_refmod_av.py 'C:\path\to\ComfyUI'
-```
-
-The CPU suite covers format round trips, no-overwrite saves, invalid inputs,
-budgets, conditioning preservation, active label order, image presentation and
-all seven graphs through ComfyUI's actual prompt validator using synthetic inputs.
-The GPU smoke test compares a synthetic image's real H3 VAE latent to the native
-reference node, then verifies an exact save/load round trip. These checks do not
-establish generated identity quality or benchmark large reference packs. The AV
-smoke compares real video, paired audio and standalone audio latents to the native
-reference node and verifies the exact mixed-pack round trip. It checks ComfyUI's
-queue before using the GPU and leaves existing generations undisturbed.
-
-## Repository privacy
-
-Git uses an explicit file allowlist: only this package's source code, synthetic
-example workflows, documentation and test tools are tracked. Local recordings,
-RefMod packs, models, credentials, logs, test outputs and other personal artifacts
-are excluded. Add new source files to `.gitignore`'s allowlist deliberately.
-
-Saved RefMods may embed the creation workflow, including prompts and filenames.
-Keep personal RefMods and workflow exports outside the tracked example files.
+See [technical notes](docs/technical-notes.md) for encoding details, API inputs,
+older-workflow migration and developer verification.

@@ -1,0 +1,910 @@
+{
+  "id": "02f5eadf-e9e4-4d09-a1f1-e703a4aafdf8",
+  "revision": 0,
+  "last_node_id": 62,
+  "last_link_id": 122,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [
+        -88.66790736237522,
+        101.98072634919987
+      ],
+      "size": [
+        350,
+        220
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "COMBO",
+          "widget": {
+            "name": "image"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "choose file to upload",
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "widget": {
+            "name": "upload"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "IMAGE",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            111
+          ]
+        },
+        {
+          "localized_name": "MASK",
+          "name": "MASK",
+          "type": "MASK",
+          "slot_index": 1,
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "alice_portrait.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "alice_portrait.png",
+        "upload": "image"
+      }
+    },
+    {
+      "id": 2,
+      "type": "VAELoader",
+      "pos": [
+        -86.36218522762829,
+        -137.49703106475283
+      ],
+      "size": [
+        349.2898460978582,
+        62.00029494975567
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "vae_name",
+          "name": "vae_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "vae_name"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "VAE",
+          "name": "VAE",
+          "type": "VAE",
+          "slot_index": 0,
+          "links": [
+            117
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "minimax_h3_video_vae_fp16.safetensors"
+      ],
+      "widgets_values_named": {
+        "vae_name": "minimax_h3_video_vae_fp16.safetensors"
+      },
+      "color": "#322",
+      "bgcolor": "#533"
+    },
+    {
+      "id": 3,
+      "type": "H3RefModLabCreate",
+      "pos": [
+        574.2594255627631,
+        -43.91160659176319
+      ],
+      "size": [
+        370,
+        380
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "vae",
+          "name": "vae",
+          "type": "VAE",
+          "link": 118
+        },
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 111
+        },
+        {
+          "localized_name": "Subject name",
+          "name": "subject_name",
+          "type": "STRING",
+          "widget": {
+            "name": "subject_name"
+          },
+          "link": 120
+        },
+        {
+          "localized_name": "description",
+          "name": "description",
+          "type": "STRING",
+          "widget": {
+            "name": "description"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "max_edge",
+          "name": "max_edge",
+          "type": "INT",
+          "widget": {
+            "name": "max_edge"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "max_tokens",
+          "name": "max_tokens",
+          "type": "INT",
+          "widget": {
+            "name": "max_tokens"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "retention_strategy",
+          "name": "retention_strategy",
+          "shape": 7,
+          "type": "COMBO",
+          "widget": {
+            "name": "retention_strategy"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "retention_details",
+          "name": "retention_details",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "retention_details"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "H3_REFMOD_LAB",
+          "name": "H3_REFMOD_LAB",
+          "type": "H3_REFMOD_LAB",
+          "slot_index": 0,
+          "links": [
+            85
+          ]
+        },
+        {
+          "localized_name": "details",
+          "name": "details",
+          "type": "STRING",
+          "slot_index": 1,
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "H3RefModLabCreate"
+      },
+      "widgets_values": [
+        "",
+        "her portrait.",
+        960,
+        8192,
+        "fully_preserved",
+        ""
+      ],
+      "widgets_values_named": {
+        "subject_name": "",
+        "description": "her portrait.",
+        "max_edge": 960,
+        "max_tokens": 8192,
+        "retention_strategy": "fully_preserved",
+        "retention_details": ""
+      }
+    },
+    {
+      "id": 4,
+      "type": "H3RefModLabSave",
+      "pos": [
+        1395.8687165279384,
+        243.55470117751912
+      ],
+      "size": [
+        422.9631744267237,
+        229.52018649415862
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "refmod",
+          "name": "refmod",
+          "type": "H3_REFMOD_LAB",
+          "link": 90
+        },
+        {
+          "localized_name": "filename",
+          "name": "filename",
+          "type": "STRING",
+          "widget": {
+            "name": "filename"
+          },
+          "link": 122
+        },
+        {
+          "localized_name": "embed_workflow",
+          "name": "embed_workflow",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "embed_workflow"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "H3_REFMOD_LAB",
+          "name": "H3_REFMOD_LAB",
+          "type": "H3_REFMOD_LAB",
+          "slot_index": 0,
+          "links": []
+        },
+        {
+          "localized_name": "saved_file",
+          "name": "saved_file",
+          "type": "STRING",
+          "slot_index": 1,
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "H3RefModLabSave"
+      },
+      "widgets_values": [
+        "",
+        true
+      ],
+      "widgets_values_named": {
+        "filename": "",
+        "embed_workflow": true
+      }
+    },
+    {
+      "id": 8,
+      "type": "LoadImage",
+      "pos": [
+        -88.66790736237522,
+        478.8154767509581
+      ],
+      "size": [
+        350,
+        220
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "COMBO",
+          "widget": {
+            "name": "image"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "choose file to upload",
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "widget": {
+            "name": "upload"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "IMAGE",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            112
+          ]
+        },
+        {
+          "localized_name": "MASK",
+          "name": "MASK",
+          "type": "MASK",
+          "slot_index": 1,
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "alice_evening_dress.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "alice_evening_dress.png",
+        "upload": "image"
+      }
+    },
+    {
+      "id": 9,
+      "type": "H3RefModLabCreate",
+      "pos": [
+        574.2594255627631,
+        378.0883934082368
+      ],
+      "size": [
+        370,
+        380
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "vae",
+          "name": "vae",
+          "type": "VAE",
+          "link": 119
+        },
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 112
+        },
+        {
+          "localized_name": "Subject name",
+          "name": "subject_name",
+          "type": "STRING",
+          "widget": {
+            "name": "subject_name"
+          },
+          "link": 121
+        },
+        {
+          "localized_name": "description",
+          "name": "description",
+          "type": "STRING",
+          "widget": {
+            "name": "description"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "max_edge",
+          "name": "max_edge",
+          "type": "INT",
+          "widget": {
+            "name": "max_edge"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "max_tokens",
+          "name": "max_tokens",
+          "type": "INT",
+          "widget": {
+            "name": "max_tokens"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "retention_strategy",
+          "name": "retention_strategy",
+          "shape": 7,
+          "type": "COMBO",
+          "widget": {
+            "name": "retention_strategy"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "retention_details",
+          "name": "retention_details",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "retention_details"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "H3_REFMOD_LAB",
+          "name": "H3_REFMOD_LAB",
+          "type": "H3_REFMOD_LAB",
+          "slot_index": 0,
+          "links": [
+            88
+          ]
+        },
+        {
+          "localized_name": "details",
+          "name": "details",
+          "type": "STRING",
+          "slot_index": 1,
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "H3RefModLabCreate"
+      },
+      "widgets_values": [
+        "",
+        "a full shot of her wearing a sophisticated evening dress.",
+        768,
+        8192,
+        "fully_preserved",
+        "Retain her face and body shape."
+      ],
+      "widgets_values_named": {
+        "subject_name": "",
+        "description": "a full shot of her wearing a sophisticated evening dress.",
+        "max_edge": 768,
+        "max_tokens": 8192,
+        "retention_strategy": "fully_preserved",
+        "retention_details": "Retain her face and body shape."
+      }
+    },
+    {
+      "id": 36,
+      "type": "PrimitiveString",
+      "pos": [
+        -90.59067717087532,
+        -26.749100008689936
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "value",
+          "name": "value",
+          "type": "STRING",
+          "widget": {
+            "name": "value"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "STRING",
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            113
+          ]
+        }
+      ],
+      "title": "Subject Name",
+      "properties": {
+        "Node name for S&R": "PrimitiveString"
+      },
+      "widgets_values": [
+        "Alice"
+      ],
+      "widgets_values_named": {
+        "value": "Alice"
+      },
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 45,
+      "type": "H3RefModLabInspect",
+      "pos": [
+        1909.9394463504136,
+        26.42961325348284
+      ],
+      "size": [
+        344.3558668281322,
+        145.99172808330573
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "refmod",
+          "name": "refmod",
+          "type": "H3_REFMOD_LAB",
+          "link": 91
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "thumbnails",
+          "name": "thumbnails",
+          "type": "IMAGE",
+          "links": [
+            79
+          ]
+        },
+        {
+          "localized_name": "details",
+          "name": "details",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "H3RefModLabInspect"
+      },
+      "widgets_values": [],
+      "widgets_values_named": {}
+    },
+    {
+      "id": 46,
+      "type": "PreviewImage",
+      "pos": [
+        1909.9394463504136,
+        214.42134133678857
+      ],
+      "size": [
+        386.6793146859579,
+        463.52574734241676
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 79
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 50,
+      "type": "H3RefModLabCombineV2",
+      "pos": [
+        1027.3550925040718,
+        250.52597700815284
+      ],
+      "size": [
+        310.5280933276179,
+        178
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "refmod_1",
+          "name": "refmods.refmod_1",
+          "shape": 7,
+          "type": "H3_REFMOD_LAB",
+          "link": 85
+        },
+        {
+          "localized_name": "refmod_2",
+          "name": "refmods.refmod_2",
+          "shape": 7,
+          "type": "H3_REFMOD_LAB",
+          "link": 88
+        },
+        {
+          "localized_name": "refmod_3",
+          "name": "refmods.refmod_3",
+          "shape": 7,
+          "type": "H3_REFMOD_LAB",
+          "link": null
+        },
+        {
+          "localized_name": "strengths",
+          "name": "strengths",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "strengths"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "H3_REFMOD_LAB",
+          "name": "H3_REFMOD_LAB",
+          "type": "H3_REFMOD_LAB",
+          "links": [
+            90,
+            91
+          ]
+        },
+        {
+          "localized_name": "reference_map",
+          "name": "reference_map",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "H3RefModLabCombineV2"
+      },
+      "widgets_values": [
+        "{}",
+        ""
+      ],
+      "widgets_values_named": {
+        "strengths": "{}",
+        "combine_strengths": ""
+      }
+    },
+    {
+      "id": 61,
+      "type": "Reroute",
+      "pos": [
+        451.42825137411353,
+        240.8945194922561
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "widget": {
+            "name": "value"
+          },
+          "link": 113
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "STRING",
+          "links": [
+            120,
+            121,
+            122
+          ]
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      },
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 62,
+      "type": "Reroute",
+      "pos": [
+        445.6598539298542,
+        169.7509803526376
+      ],
+      "size": [
+        75,
+        26
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "",
+          "type": "*",
+          "link": 117
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "VAE",
+          "links": [
+            118,
+            119
+          ]
+        }
+      ],
+      "properties": {
+        "showOutputText": false,
+        "horizontal": false
+      },
+      "color": "#322",
+      "bgcolor": "#533"
+    }
+  ],
+  "links": [
+    [
+      79,
+      45,
+      0,
+      46,
+      0,
+      "IMAGE"
+    ],
+    [
+      90,
+      50,
+      0,
+      4,
+      0,
+      "H3_REFMOD_LAB"
+    ],
+    [
+      91,
+      50,
+      0,
+      45,
+      0,
+      "H3_REFMOD_LAB"
+    ],
+    [
+      111,
+      1,
+      0,
+      3,
+      1,
+      "IMAGE"
+    ],
+    [
+      112,
+      8,
+      0,
+      9,
+      1,
+      "IMAGE"
+    ],
+    [
+      113,
+      36,
+      0,
+      61,
+      0,
+      "STRING"
+    ],
+    [
+      117,
+      2,
+      0,
+      62,
+      0,
+      "VAE"
+    ],
+    [
+      118,
+      62,
+      0,
+      3,
+      0,
+      "VAE"
+    ],
+    [
+      119,
+      62,
+      0,
+      9,
+      0,
+      "VAE"
+    ],
+    [
+      85,
+      3,
+      0,
+      50,
+      0,
+      "H3_REFMOD_LAB"
+    ],
+    [
+      88,
+      9,
+      0,
+      50,
+      1,
+      "H3_REFMOD_LAB"
+    ],
+    [
+      120,
+      61,
+      0,
+      3,
+      2,
+      "STRING"
+    ],
+    [
+      121,
+      61,
+      0,
+      9,
+      2,
+      "STRING"
+    ],
+    [
+      122,
+      61,
+      0,
+      4,
+      1,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.8390545288824175,
+      "offset": [
+        385.39498363519033,
+        432.411714643765
+      ]
+    },
+    "favoritedWidgets": {
+      "favorites": []
+    }
+  },
+  "version": 0.4
+}

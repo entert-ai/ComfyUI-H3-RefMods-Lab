@@ -645,56 +645,51 @@ class RefModTests(unittest.TestCase):
         (ROOT / "artifacts/refmod_node_inputs.json").write_text(json.dumps(schemas, indent=2), encoding="utf-8")
         self.assertEqual(len(schemas), 11)
 
-    def test_workflows_with_comfy_prompt_validator(self):
+    def test_example_workflow_links_and_types(self):
         import nodes as comfy_nodes
-        import execution
-        from PIL import Image
 
         async def check():
-            for module in ("nodes_minimax_h3.py", "nodes_custom_sampler.py", "nodes_model_advanced.py", "nodes_sparse_attention.py", "nodes_audio.py", "nodes_video.py"):
+            for module in ("nodes_minimax_h3.py", "nodes_custom_sampler.py", "nodes_audio.py", "nodes_video.py", "nodes_resolution.py", "nodes_primitive.py", "nodes_preview_any.py"):
                 self.assertTrue(await comfy_nodes.load_custom_node(str(COMFY / "comfy_extras" / module), module_parent="comfy_extras"))
-            for cls in nodes.NODE_CLASSES:
-                comfy_nodes.NODE_CLASS_MAPPINGS[cls.GET_SCHEMA().node_id] = cls
-            with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
-                previous_input = nodes.folder_paths.get_input_directory()
-                previous_paths = nodes.folder_paths.folder_names_and_paths[nodes.FOLDER]
-                nodes.folder_paths.set_input_directory(directory)
-                nodes.folder_paths.folder_names_and_paths[nodes.FOLDER] = ([directory], {".safetensors"})
-                try:
-                    image_path = Path(directory) / "test.png"
-                    Image.new("RGB", (96, 64), (128, 128, 128)).save(image_path)
-                    import wave
-                    with wave.open(str(Path(directory) / "test.wav"), "wb") as audio:
-                        audio.setparams((2, 2, 32000, 0, "NONE", "not compressed"))
-                        audio.writeframes(bytes(32000 * 2 * 2))
-                    # Prompt validation checks file presence; media decoding is tested separately.
-                    (Path(directory) / "test.mp4").write_bytes(b"synthetic-validation-placeholder")
-                    ref = core.save_pack(pack(), directory, "test")
-                    for path in sorted((ROOT / "workflows").glob("*.api.json")):
-                        graph = json.loads(path.read_text())
-                        for node in graph.values():
-                            if node["class_type"] == "LoadImage":
-                                node["inputs"]["image"] = "test.png"
-                            if node["class_type"] == "H3RefModLabLoad":
-                                node["inputs"]["filename"] = ref.name
-                            if node["class_type"] == "LoadVideo":
-                                node["inputs"]["file"] = "test.mp4"
-                            if node["class_type"] == "LoadAudio":
-                                node["inputs"]["audio"] = "test.wav"
-                        result = await execution.validate_prompt("refmod-test", graph, None)
-                        self.assertTrue(result[0], (path.name, result))
-                        self.assertEqual(result[3], {}, (path.name, result))
-                        # Verify optional native expanding ports are valid in an actual API graph.
-                        for node in graph.values():
-                            if node["class_type"] == "H3RefModLabCombineV2":
-                                node["inputs"]["refmods.refmod_7"] = node["inputs"]["refmods.refmod_1"]
-                                node["inputs"]["refmods.refmod_100"] = node["inputs"]["refmods.refmod_2"]
-                                node["inputs"]["strengths"] = '{"refmod_7":0.5}'
-                        expanded = await execution.validate_prompt("expanding-refmod-test", graph, None)
-                        self.assertTrue(expanded[0], (path.name, expanded))
-                finally:
-                    nodes.folder_paths.set_input_directory(previous_input)
-                    nodes.folder_paths.folder_names_and_paths[nodes.FOLDER] = previous_paths
+            known_types = set(comfy_nodes.NODE_CLASS_MAPPINGS)
+            known_types.update(cls.GET_SCHEMA().node_id for cls in nodes.NODE_CLASSES)
+            known_types.add("Reroute")  # Frontend-only passthrough.
+            paths = sorted((ROOT / "workflows").glob("*.json"))
+            self.assertEqual([path.name for path in paths], ["01_create_refmod_Alice.json", "02_generate_with_refmod_Alice.json"])
+            for path in paths:
+                workflow = json.loads(path.read_text())
+                subgraphs = workflow.get("definitions", {}).get("subgraphs", [])
+                graph_types = known_types | {graph["id"] for graph in subgraphs}
+                for graph in [workflow, *subgraphs]:
+                    graph_nodes = {node["id"]: node for node in graph["nodes"]}
+                    self.assertEqual(len(graph_nodes), len(graph["nodes"]), path.name)
+                    links = {}
+                    for raw in graph["links"]:
+                        link = raw if isinstance(raw, dict) else dict(zip(("id", "origin_id", "origin_slot", "target_id", "target_slot", "type"), raw))
+                        self.assertNotIn(link["id"], links, path.name)
+                        links[link["id"]] = link
+                        if link["origin_id"] == -10:
+                            self.assertIn(graph, subgraphs)
+                            self.assertIn(link["id"], graph["inputs"][link["origin_slot"]]["linkIds"])
+                        else:
+                            source = graph_nodes[link["origin_id"]]["outputs"][link["origin_slot"]]
+                            self.assertIn(link["id"], source.get("links") or [], path.name)
+                        if link["target_id"] == -20:
+                            self.assertIn(graph, subgraphs)
+                            self.assertIn(link["id"], graph["outputs"][link["target_slot"]]["linkIds"])
+                        else:
+                            target = graph_nodes[link["target_id"]]["inputs"][link["target_slot"]]
+                            self.assertEqual(target["link"], link["id"], path.name)
+                    for node in graph["nodes"]:
+                        self.assertIn(node["type"], graph_types, (path.name, node["type"]))
+                        for slot, port in enumerate(node.get("inputs", [])):
+                            if port.get("link") is not None:
+                                link = links[port["link"]]
+                                self.assertEqual((link["target_id"], link["target_slot"]), (node["id"], slot), path.name)
+                        for slot, port in enumerate(node.get("outputs", [])):
+                            for link_id in port.get("links") or []:
+                                link = links[link_id]
+                                self.assertEqual((link["origin_id"], link["origin_slot"]), (node["id"], slot), path.name)
         asyncio.run(check())
 
 
