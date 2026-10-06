@@ -1,4 +1,5 @@
 """Run with ComfyUI's Python; all tests use synthetic media and CPU tensors."""
+import importlib
 import importlib.util
 import asyncio
 import json
@@ -56,6 +57,18 @@ def audio_pack():
 
 
 class RefModTests(unittest.TestCase):
+    def test_extra_model_paths_filter_refmod_files(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
+            paths = [directory, str(Path(directory) / "second")]
+            with patch.dict(nodes.folder_paths.folder_names_and_paths, {nodes.FOLDER: (paths, set())}), patch.dict(nodes.folder_paths.filename_list_cache, {}, clear=True):
+                saved = core.save_pack(pack(), directory, "demo")
+                (Path(directory) / "notes.txt").write_text("not a pack")
+                importlib.reload(nodes)
+                self.assertIs(nodes.folder_paths.folder_names_and_paths[nodes.FOLDER][0], paths)
+                self.assertEqual(nodes.folder_paths.folder_names_and_paths[nodes.FOLDER][1], {".safetensors"})
+                self.assertEqual(nodes.folder_paths.get_filename_list(nodes.FOLDER), [saved.name])
+                self.assertEqual(nodes.Load.define_schema().inputs[0].options, [saved.name])
+
     def test_saved_instructions_roundtrip_and_subject_identity(self):
         a = nodes.SetInstructions.execute(pack("Alice"), "a portrait", subject_name="Alice", retention_strategy="partially_preserved", retention_details="Keep facial identity; allow new clothing").result[0]
         b = nodes.SetInstructions.execute(pack("Alice"), "her body shape", subject_name="Alice", retention_strategy="fully_preserved").result[0]
@@ -394,7 +407,8 @@ class RefModTests(unittest.TestCase):
                 core.select_sources(pack(), selection)
 
     def test_empty_selection_all_downstream_paths(self):
-        empty = core.select_sources(pack(), "[]")
+        empty = nodes.SelectSources.execute(pack(), "[]").result[0]
+        empty = nodes.SetInstructions.execute(empty, "her portrait", subject_name="Alice").result[0]
         self.assertEqual(empty["entries"], [])
         self.assertEqual(core.combine(empty, pack("beth"), 1, 1)["entries"][0]["name"], "beth")
         class Clip:
@@ -411,6 +425,9 @@ class RefModTests(unittest.TestCase):
         self.assertEqual(tuple(nodes.Inspect.execute(empty).result[0].shape), (0, 256, 256, 3))
         with self.assertRaises(ValueError):
             core.validate(empty)
+        with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory:
+            with self.assertRaisesRegex(ValueError, "at least one"):
+                core.save_pack(empty, directory, "empty")
 
     def test_selector_filters_both_qwen_and_latents(self):
         combined = core.combine(pack("alice"), pack("beth"), 1, 1)

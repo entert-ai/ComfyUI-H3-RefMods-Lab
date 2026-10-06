@@ -43,7 +43,7 @@ def instruction_metadata(subject_name, retention_strategy="unspecified", retenti
 
 
 def set_instructions(pack, description, subject_name="Subject", retention_strategy="unspecified", retention_details="", audio_retention_strategy="unspecified", audio_retention_details=""):
-    validate(pack)
+    validate(pack, allow_empty=True)
     metadata = instruction_metadata(subject_name, retention_strategy, retention_details, audio_retention_strategy, audio_retention_details)
     entries = []
     for entry in pack["entries"]:
@@ -52,7 +52,7 @@ def set_instructions(pack, description, subject_name="Subject", retention_strate
             instructions.update(retention_strategy=audio_retention_strategy, retention_details=audio_retention_details)
         entries.append(dict(entry, **instructions, description=description))
     result = {"entries": entries}
-    validate(result)
+    validate(result, allow_empty=True)
     return result
 
 

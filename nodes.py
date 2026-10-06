@@ -20,7 +20,7 @@ CATEGORY = "MiniMax H3/RefMods Lab"
 FOLDER = "h3_refmods_lab"
 if FOLDER not in folder_paths.folder_names_and_paths:
     folder_paths.add_model_folder_path(FOLDER, str(Path(folder_paths.models_dir) / FOLDER))
-    folder_paths.folder_names_and_paths[FOLDER][1].add(".safetensors")
+folder_paths.folder_names_and_paths[FOLDER][1].add(".safetensors")
 
 
 def instruction_inputs(audio_only=False, paired=False, include_subject=False):

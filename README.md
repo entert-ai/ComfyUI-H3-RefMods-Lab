@@ -14,7 +14,7 @@ Save encoded references, subject descriptions and retention instructions togethe
 - Combine up to 100 RefMods. Dynamically expanding inputs make it easy to assemble larger reference collections.
 - Reopen the creation workflow. Drag a RefMod saved with embedded workflow metadata into ComfyUI to recover its original workflow.
 
-**Version 0.1.1** — an early release of the ComfyUI nodes. Interfaces and compatibility are still evolving.
+**Version 0.1.2** — an early release of the ComfyUI nodes. Interfaces and compatibility are still evolving.
 
 ## Install and start
 

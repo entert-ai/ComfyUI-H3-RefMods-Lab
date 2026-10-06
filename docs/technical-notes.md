@@ -16,7 +16,7 @@ makes updates easier. Avoid nesting the repository inside another copy of its fo
 ## Older workflows and packs
 
 - Current packs use Lab format v2; v1 image packs remain readable. The pack format
-  version is separate from the package's `0.1.1` release version.
+  version is separate from the package's `0.1.2` release version.
 - Replace old A/B Combine nodes and reconnect their inputs. Current inputs are
   numbered 1–100 with matching strength sliders.
 - Subject grouping uses the subject name, ignoring capitalization and extra spaces.
