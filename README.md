@@ -66,8 +66,6 @@ for that Alice source and specify that her identity stays while clothing may cha
 
 [![Select Alice and Outfit references, combine their strengths and generate video](docs/images/02_generate_with_refmod_Alice.png)](docs/images/02_generate_with_refmod_Alice.png)
 
-*The screenshot shows an earlier soundscape; the downloadable workflow uses park ambience.*
-
 Open [02_generate_with_refmod_Alice.json](workflows/02_generate_with_refmod_Alice.json).
 
 1. Select your Alice and Outfit packs in the Load nodes and your installed models
@@ -82,7 +80,9 @@ With Alice first and Outfit second, both active, `<Subject 1>` is Alice and
 `<Subject 2>` is Outfit1. Check that mapping whenever you change the references.
 
 Resolution, length, seed and steps are exposed on the sampling subgraph. The
-example uses Euler/simple at 24 fps; its model choices are editable.
+example uses Euler/simple at 24 fps and selects Comfy Kitchen attention through
+the native Model Attention Backend node. If unavailable, ComfyUI falls back to
+PyTorch attention. Model choices remain editable.
 
 ## Nodes
 

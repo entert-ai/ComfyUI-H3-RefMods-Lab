@@ -649,7 +649,7 @@ class RefModTests(unittest.TestCase):
         import nodes as comfy_nodes
 
         async def check():
-            for module in ("nodes_minimax_h3.py", "nodes_custom_sampler.py", "nodes_audio.py", "nodes_video.py", "nodes_resolution.py", "nodes_primitive.py", "nodes_preview_any.py"):
+            for module in ("nodes_minimax_h3.py", "nodes_custom_sampler.py", "nodes_model_advanced.py", "nodes_audio.py", "nodes_video.py", "nodes_resolution.py", "nodes_primitive.py", "nodes_preview_any.py"):
                 self.assertTrue(await comfy_nodes.load_custom_node(str(COMFY / "comfy_extras" / module), module_parent="comfy_extras"))
             known_types = set(comfy_nodes.NODE_CLASS_MAPPINGS)
             known_types.update(cls.GET_SCHEMA().node_id for cls in nodes.NODE_CLASSES)
