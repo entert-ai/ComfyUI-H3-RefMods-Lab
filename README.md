@@ -161,3 +161,7 @@ include prompts and filenames; disable embedding before sharing if needed.
 
 See [technical notes](docs/technical-notes.md) for encoding details, API inputs,
 older-workflow migration and developer verification.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Model weights and third-party dependencies retain their own licenses.

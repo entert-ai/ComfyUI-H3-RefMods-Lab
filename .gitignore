@@ -2,6 +2,7 @@
 *
 !.gitignore
 !README.md
+!LICENSE
 !requirements.txt
 !__init__.py
 !core.py
