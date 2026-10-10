@@ -133,8 +133,23 @@ has separate visual and soundtrack retention controls.
 
 ## Saving and reopening
 
-Packs are saved to `ComfyUI/models/h3_refmods_lab`. Each filename prefix has a
-persistent counter; deleting old files does not restart it. Back up the hidden
+Packs are saved by default to `ComfyUI/models/h3_refmods_lab`. To choose another
+location, add an `h3_refmods_lab` entry to ComfyUI's `extra_model_paths.yaml`
+(create it from `extra_model_paths.yaml.example` if needed), then restart ComfyUI:
+
+```yaml
+my_refmods:
+  is_default: true
+  h3_refmods_lab: D:/MyRefMods
+```
+
+Replace `D:/MyRefMods` with your chosen directory. The Save node writes to the
+first configured `h3_refmods_lab` folder; `is_default: true` puts this directory
+first. Load and picker nodes discover packs across all configured folders.
+Existing packs are not moved automatically; move them manually if needed.
+
+Each filename prefix has a persistent counter; deleting old files does not
+restart it. Back up the hidden
 `.h3-refmods-counter.sqlite3` file with your packs to preserve the counters.
 
 **Embed workflow** is on by default. Drag a saved RefMod into ComfyUI to reopen
